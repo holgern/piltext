@@ -1,5 +1,23 @@
 # piltext
 
+[![codecov](https://codecov.io/gh/holgern/piltext/graph/badge.svg?token=VyIU0ZxwpD)](https://codecov.io/gh/holgern/piltext)
+[![PyPi Version](https://img.shields.io/pypi/v/piltext.svg)](https://pypi.python.org/pypi/piltext/)
+
+Creates PNG from text using Pillow
+
+### Installation
+PyPI
+```bash
+pip install piltext
+```
+or from source
+```bash
+git clone https://github.com/holgern/piltext.git
+cd piltext
+python3 setup.py install
+```
+
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
 
