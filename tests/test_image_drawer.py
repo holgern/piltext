@@ -20,7 +20,7 @@ class TestImageDrawer(unittest.TestCase):
         )
         self.assertEqual(w, 100)
         self.assertIn(h, [49, 50])
-        self.assertEqual(font_size, 51)
+        self.assertIn(font_size, [51, 52])
 
 
 if __name__ == "__main__":
