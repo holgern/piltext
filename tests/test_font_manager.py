@@ -46,7 +46,7 @@ class TestFontManager(unittest.TestCase):
         font = self.font_manager.build_font("Roboto-Bold", 20)
 
         # Normalize the path to make the test cross-platform
-        expected_path = f"{self.fontdirs[0]}\\Roboto-Bold.ttf"
+        expected_path = f"{self.fontdirs[0]}{os.path.sep}Roboto-Bold.ttf"
         mock_truetype.assert_called_once_with(expected_path, 20)
         self.assertEqual(font, mock_font)
 

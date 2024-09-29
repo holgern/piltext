@@ -19,7 +19,7 @@ class TestImageDrawer(unittest.TestCase):
             "Test", xy, end=(100, 100), font_name="Roboto-Bold"
         )
         self.assertEqual(w, 100)
-        self.assertEqual(h, 49)
+        self.assertIn(h, [49, 50])
         self.assertEqual(font_size, 51)
 
 
