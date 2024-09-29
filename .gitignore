@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# wing
+*.wpr
+*.wpu
+
+/testing_fonts/
+
+# editor
+.vscode
