@@ -7,17 +7,18 @@ class ImageHandler:
         self.height = height
         self.mode = mode
         self.background = background
-        self.image = self.initialize()
+        self.image = False
+        self.initialize()
 
     def initialize(self):
         """Initialize the image with the given width, height, and mode."""
-        return Image.new(self.mode, (self.width, self.height), self.background)
+        self.image = Image.new(self.mode, (self.width, self.height), self.background)
 
     def change_size(self, width, height):
         """Changes the size of the image and re-initializes it."""
         self.width = width
         self.height = height
-        self.image = self.initialize()  # Reinitialize the image with the new size
+        self.initialize()  # Reinitialize the image with the new size
 
     def apply_transformations(self, mirror=False, orientation=0, inverted=False):
         """Apply transformations like mirroring, rotating, or inverting."""
