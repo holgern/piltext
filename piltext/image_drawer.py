@@ -13,10 +13,12 @@ class ImageDrawer:
 
     def initialize(self):
         self.image_handler.initialize()
+        self.draw = ImageDraw.Draw(self.image_handler.image)
 
     def change_size(self, width, height):
         """Changes the size of the image and re-initializes it."""
         self.image_handler.change_size(width, height)
+        self.draw = ImageDraw.Draw(self.image_handler.image)
 
     def draw_text(self, text, start, end=None, font_name=None, **kwargs):
         """Draw text on the image with optional scaling to fit within a bounding box.
