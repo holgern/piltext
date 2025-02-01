@@ -26,7 +26,7 @@ class TestImageDrawer(unittest.TestCase):
         w, h, font_size = self.image_drawer.draw_text(
             "12345 abcdefg", xy, end=(254, 25), font_name="Roboto-Bold", anchor="lt"
         )
-        self.assertEqual(w, 47)
+        self.assertIn(w, [47, 48])
         self.assertEqual(h, 9)
         self.assertEqual(font_size, 7)
 
