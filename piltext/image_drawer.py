@@ -57,3 +57,7 @@ class ImageDrawer:
     def show(self, title=None):
         """Show the current image."""
         self.image_handler.show(title=title)
+
+    def paste(self, im, box=None, mask=None):
+        """Paste another image onto this one."""
+        self.image_handler.image.paste(im, box=box, mask=mask)
