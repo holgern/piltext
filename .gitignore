@@ -136,3 +136,6 @@ dmypy.json
 
 # editor
 .vscode
+
+#version
+piltext/_version.py
