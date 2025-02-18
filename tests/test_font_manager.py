@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 
 from PIL import Image, ImageDraw
 
-from piltext import (  # Assuming the class is in a file called font_manager.py
-    FontManager,
+from piltext import (
+    FontManager,  # Assuming the class is in a file called font_manager.py
 )
 
 
@@ -60,7 +60,9 @@ class TestFontManager(unittest.TestCase):
 
         # Build font the first time
         font = self.font_manager.build_font("Roboto-Bold", 20)
-        self.assertEqual(self.font_manager._font_cache[("Roboto-Bold", 20)], font)
+        self.assertEqual(
+            self.font_manager._font_cache[("Roboto-Bold", 20, "none")], font
+        )
 
         # Build font the second time (should use cache, not call truetype again)
         font_cached = self.font_manager.build_font("Roboto-Bold", 20)

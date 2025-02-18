@@ -96,14 +96,14 @@ class FontManager:
         """Create and cache font objects."""
         font_size = font_size or self.default_font_size
         font_name = font_name or self.default_font_name
-        variation_name = variation_name or "default"
+        variation_name = variation_name or "none"
         cache_key = (font_name, font_size, variation_name)
         if cache_key in self._font_cache:
             return self._font_cache[cache_key]
 
         font_path = self.get_full_path(font_name)
         font = ImageFont.truetype(font_path, font_size)
-        if variation_name != "default":
+        if variation_name != "none":
             font.set_variation_by_name(variation_name)
         self._font_cache[cache_key] = font
         return font
