@@ -20,7 +20,9 @@ class ImageDrawer:
         self.image_handler.change_size(width, height)
         self.draw = ImageDraw.Draw(self.image_handler.image)
 
-    def draw_text(self, text, start, end=None, font_name=None, **kwargs):
+    def draw_text(
+        self, text, start, end=None, font_name=None, font_variation=None, **kwargs
+    ):
         """Draw text on the image with optional scaling to fit within a bounding box.
 
         - start: tuple (x1, y1) for the top-left corner.
@@ -31,9 +33,13 @@ class ImageDrawer:
 
         if end is not None:
             max_w, max_h = abs(end[0] - start[0]), abs(end[1] - start[1])
-            font = text_box.fit_text(self.draw, max_w, max_h, font_name)
+            font = text_box.fit_text(
+                self.draw, max_w, max_h, font_name, font_variation=font_variation
+            )
         else:
-            font = self.font_manager.build_font(font_name)
+            font = self.font_manager.build_font(
+                font_name, variation_name=font_variation
+            )
 
         # Calculate the text size before drawing
         w, h = self.font_manager.calculate_text_size(self.draw, text, font)
