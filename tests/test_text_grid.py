@@ -75,29 +75,37 @@ class TestGrid(unittest.TestCase):
 
     def test_set_text_single_cell(self):
         """Test that text is correctly placed within a single grid cell."""
-        self.grid.set_text((2, 1), (2, 1), "Test4")
+        self.grid.set_text((2, 1), "Test4", end=((2, 1)))
 
         # Check that draw_text was called with the correct pixel coordinates
         self.image_drawer.draw_text.assert_called_with(
-            "Test4", (120, 140), end=(240, 210), font_name=None
+            "Test4", (120, 140), end=(240, 210), font_name=None, anchor="lt"
         )
 
     def test_set_text_multiple_cells(self):
         """Test that text is correctly placed spanning multiple grid cells."""
-        self.grid.set_text((0, 0), (0, 3), "Test1", font_name="PixelSplitter-Bold")
+        self.grid.set_text(
+            (0, 0), "Test1", end=(0, 3), font_name="PixelSplitter-Bold", anchor="lt"
+        )
 
         # Check that draw_text was called with the correct pixel coordinates
         self.image_drawer.draw_text.assert_called_with(
-            "Test1", (0, 0), end=(480, 70), font_name="PixelSplitter-Bold"
+            "Test1", (0, 0), end=(480, 70), font_name="PixelSplitter-Bold", anchor="lt"
         )
 
     def test_set_text_different_rows(self):
         """Test text spanning across rows and columns."""
-        self.grid.set_text((1, 0), (2, 2), "TestMulticell", font_name="Roboto-Bold")
+        self.grid.set_text(
+            (1, 0), "TestMulticell", end=(2, 2), font_name="Roboto-Bold", anchor="lt"
+        )
 
         # Check that draw_text was called with the correct pixel coordinates
         self.image_drawer.draw_text.assert_called_with(
-            "TestMulticell", (0, 70), end=(360, 210), font_name="Roboto-Bold"
+            "TestMulticell",
+            (0, 70),
+            end=(360, 210),
+            font_name="Roboto-Bold",
+            anchor="lt",
         )
 
 
