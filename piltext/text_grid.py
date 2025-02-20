@@ -127,6 +127,49 @@ class TextGrid:
             text_str = text.pop("text")
             self.set_text(start, text_str, **text)
 
+    def paste_image(self, start, image, end=None, anchor="lt", **kwargs):
+        """Place image within a grid cell or merged cell range.
+
+        Args:
+            start (tuple[int, int] | int): If a tuple, it represents (row, col)
+                in the grid.
+                If an integer, it refers to a merged cell index.
+            image: The image to be displayed.
+            end (tuple[int, int], optional): The bottom-right coordinate of a
+                merged cell range.
+                If None, the function determines the end position based on merged cells.
+            anchor (str, optional): The image anchor position, e.g., "lt" (left-top) or
+                "rs" (right-side).
+
+            **kwargs: Additional keyword arguments for text rendering.
+
+        Notes:
+            - If `start` is a tuple (row, col), the function checks if the cell is
+              part of a merged group.
+            - If `start` is an integer, it retrieves the corresponding
+              merged cell coordinates.
+            - The text position is determined based on the anchor.
+        """
+        if end is None and isinstance(start, tuple):
+            row, col = start
+            # Check if this cell is part of a merged group
+            if (row, col) in self.merged_cells:
+                start_grid, end_grid = self.merged_cells[(row, col)]
+            else:
+                start_grid, end_grid = (row, col), (row, col)
+        elif end is None and isinstance(start, int):
+            start_grid, end_grid = self.get_merged_cells_list()[start]
+        else:
+            start_grid = start
+            end_grid = end
+        start_pixel, end_pixel = self._grid_to_pixels(start_grid, end_grid)
+
+        if anchor in ["rs"]:
+            box = (end_pixel[0] - image.width, end_pixel[1] - image.height)
+        else:
+            box = (start_pixel[0], start_pixel[1])
+        self.image_drawer.paste(image, box=box, **kwargs)
+
     def get_merged_cells(self):
         """Returns a dictionary of merged cells."""
         merged_dict = {}
