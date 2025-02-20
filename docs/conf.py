@@ -24,7 +24,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
-    "sphinx_immaterial",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -42,7 +41,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 # html_theme = 'furo'
-html_theme = "sphinx_immaterial"
 
 html_theme_options = {
     "features": ["toc.follow"],
