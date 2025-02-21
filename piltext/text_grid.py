@@ -28,6 +28,40 @@ class TextGrid:
         # Dictionary to store merged cells
         self.merged_cells = {}
 
+    def get_grid(self, start, end=None, convert_to_pixel=False):
+        """Returns Grid cell or pixel coordinates.
+        Args:
+            start (tuple[int, int] | int): If a tuple, it represents (row, col)
+                in the grid.
+                If an integer, it refers to a merged cell index.
+            end (tuple[int, int], optional): The bottom-right coordinate of a
+                merged cell range.
+                If None, the function determines the end position based on merged cells.
+            convert_to_pixel boolean: If True the output is (x1, y1), (x2, y2),
+                otherwise the output is start_grid, end_grid
+
+        Notes:
+            - If `start` is a tuple (row, col), the function checks if the cell is
+              part of a merged group.
+            - If `start` is an integer, it retrieves the corresponding
+              merged cell coordinates.
+        """
+        if end is None and isinstance(start, tuple):
+            row, col = start
+            # Check if this cell is part of a merged group
+            if (row, col) in self.merged_cells:
+                start_grid, end_grid = self.merged_cells[(row, col)]
+            else:
+                start_grid, end_grid = (row, col), (row, col)
+        elif end is None and isinstance(start, int):
+            start_grid, end_grid = self.get_merged_cells_list()[start]
+        else:
+            start_grid = start
+            end_grid = end
+        if convert_to_pixel:
+            return self._grid_to_pixels(start_grid, end_grid)
+        return start_grid, end_grid
+
     def _grid_to_pixels(self, start_grid, end_grid):
         """Convert grid coordinates (row, col) to pixel coordinates on the image.
 
@@ -81,20 +115,8 @@ class TextGrid:
               merged cell coordinates.
             - The text position is determined based on the anchor.
         """
-        if end is None and isinstance(start, tuple):
-            row, col = start
-            # Check if this cell is part of a merged group
-            if (row, col) in self.merged_cells:
-                start_grid, end_grid = self.merged_cells[(row, col)]
-            else:
-                start_grid, end_grid = (row, col), (row, col)
-        elif end is None and isinstance(start, int):
-            start_grid, end_grid = self.get_merged_cells_list()[start]
-        else:
-            start_grid = start
-            end_grid = end
 
-        start_pixel, end_pixel = self._grid_to_pixels(start_grid, end_grid)
+        start_pixel, end_pixel = self.get_grid(start, end=end, convert_to_pixel=True)
         if anchor not in ["rs"]:
             self.image_drawer.draw_text(
                 text,
@@ -150,20 +172,7 @@ class TextGrid:
               merged cell coordinates.
             - The text position is determined based on the anchor.
         """
-        if end is None and isinstance(start, tuple):
-            row, col = start
-            # Check if this cell is part of a merged group
-            if (row, col) in self.merged_cells:
-                start_grid, end_grid = self.merged_cells[(row, col)]
-            else:
-                start_grid, end_grid = (row, col), (row, col)
-        elif end is None and isinstance(start, int):
-            start_grid, end_grid = self.get_merged_cells_list()[start]
-        else:
-            start_grid = start
-            end_grid = end
-        start_pixel, end_pixel = self._grid_to_pixels(start_grid, end_grid)
-
+        start_pixel, end_pixel = self.get_grid(start, end=end, convert_to_pixel=True)
         if anchor in ["rs"]:
             box = (end_pixel[0] - image.width, end_pixel[1] - image.height)
         else:
