@@ -18,8 +18,8 @@ class TextGrid:
         self.margin_y = margin_y
 
         # Calculate the width and height of each grid cell
-        self.cell_width = self.width // cols
-        self.cell_height = self.height // rows
+        self.cell_width = (self.width) / cols
+        self.cell_height = (self.height) / rows
 
         # Calculate the drawable area inside each cell after applying margins
         self.inner_cell_width = self.cell_width - 2 * margin_x
@@ -68,10 +68,10 @@ class TextGrid:
         - start_grid: Tuple (row_start, col_start)
         - end_grid: Tuple (row_end, col_end)
         """
-        x1 = start_grid[1] * self.cell_width + self.margin_x
-        y1 = start_grid[0] * self.cell_height + self.margin_y
-        x2 = (end_grid[1] + 1) * self.cell_width - self.margin_x
-        y2 = (end_grid[0] + 1) * self.cell_height - self.margin_y
+        x1 = int(start_grid[1] * self.cell_width + self.margin_x)
+        y1 = int(start_grid[0] * self.cell_height + self.margin_y)
+        x2 = int((end_grid[1] + 1) * self.cell_width - self.margin_x)
+        y2 = int((end_grid[0] + 1) * self.cell_height - self.margin_y)
         return (x1, y1), (x2, y2)
 
     def merge(self, start_grid, end_grid):
