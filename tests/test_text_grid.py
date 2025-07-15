@@ -40,6 +40,7 @@ class MockImageDrawer:
         # Mock the draw_text method to check that
         # it's being called with correct parameters
         self.draw.text((start, text, font_name))
+        return 0, 0, 0
 
     def finalize(self, inverted=False):
         pass
@@ -79,7 +80,12 @@ class TestGrid(unittest.TestCase):
 
         # Check that draw_text was called with the correct pixel coordinates
         self.image_drawer.draw_text.assert_called_with(
-            "Test4", (120, 140), end=(240, 210), font_name=None, anchor="lt"
+            "Test4",
+            (120, 140),
+            end=(240, 210),
+            font_name=None,
+            font_variation=None,
+            anchor="lt",
         )
 
     def test_set_text_multiple_cells(self):
@@ -90,13 +96,23 @@ class TestGrid(unittest.TestCase):
 
         # Check that draw_text was called with the correct pixel coordinates
         self.image_drawer.draw_text.assert_called_with(
-            "Test1", (0, 0), end=(480, 70), font_name="PixelSplitter-Bold", anchor="lt"
+            "Test1",
+            (0, 0),
+            end=(480, 70),
+            font_name="PixelSplitter-Bold",
+            font_variation=None,
+            anchor="lt",
         )
 
     def test_set_text_different_rows(self):
         """Test text spanning across rows and columns."""
         self.grid.set_text(
-            (1, 0), "TestMulticell", end=(2, 2), font_name="Roboto-Bold", anchor="lt"
+            (1, 0),
+            "TestMulticell",
+            end=(2, 2),
+            font_name="Roboto-Bold",
+            font_variation=None,
+            anchor="lt",
         )
 
         # Check that draw_text was called with the correct pixel coordinates
@@ -105,6 +121,7 @@ class TestGrid(unittest.TestCase):
             (0, 70),
             end=(360, 210),
             font_name="Roboto-Bold",
+            font_variation=None,
             anchor="lt",
         )
 

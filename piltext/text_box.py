@@ -40,3 +40,24 @@ class TextBox:
     def draw_text(self, draw: ImageDraw, xy, font, **kwargs):
         """Draw the text using the given font."""
         draw.text(xy, self.text, font=font, **kwargs)
+
+    def get_wrapped_text_lines(self, draw, text, font, max_width):
+        """Wrap text into multiple lines so that each fits within max_width."""
+        words = text.split()
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = f"{current_line} {word}".strip()
+            w, _ = self.font_manager.calculate_text_size(draw, test_line, font)
+            if w <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+
+        if current_line:
+            lines.append(current_line)
+
+        return lines
