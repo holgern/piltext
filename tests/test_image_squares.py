@@ -121,4 +121,3 @@ def test_image_squares_custom_rows_columns():
     assert isinstance(img_both, Image.Image)
     assert squares_both.rows == 5
     assert squares_both.columns == 5
-

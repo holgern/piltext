@@ -4,17 +4,20 @@ This document provides guidelines for AI agents working on this repository.
 
 ## Project Overview
 
-Piltext is a Python library that creates PNG images from text using Pillow (PIL). It provides tools for:
+Piltext is a Python library that creates PNG images from text using Pillow (PIL). It
+provides tools for:
 
 - Text rendering with customizable fonts, sizes, and styles
 - Font management including Google Fonts integration
 - Text layout with grids and anchoring
 - Image creation and manipulation
 
-Piltext is designed to make it easy to create text-based images programmatically with precise control over text positioning, font selection, and styling.
+Piltext is designed to make it easy to create text-based images programmatically with
+precise control over text positioning, font selection, and styling.
 
 Instructions:
-* Never use git commands, you must not commit code
+
+- Never use git commands, you must not commit code
 
 ## Installation
 
@@ -23,6 +26,7 @@ Instructions:
 ```bash
 pre-commit run --all-files
 ```
+
 ## Documentation
 
 ### Building Documentation
@@ -30,6 +34,7 @@ pre-commit run --all-files
 The project documentation is built using Sphinx and hosted on ReadTheDocs.
 
 To build the documentation locally:
+
 ```bash
 python doc/make
 ```
@@ -39,6 +44,7 @@ The generated documentation will be available in the `docs/_build/html` director
 ### API Documentation
 
 When working on the code, please follow these documentation guidelines:
+
 - Use docstrings for all public classes, methods, and functions
 - Follow the NumPy docstring format
 - Include type hints in function signatures
@@ -50,18 +56,16 @@ When working on the code, please follow these documentation guidelines:
 
 Run all tests using `pytest`.
 
-To run a specific test file:
-`pytest tests/test_text_box.py`
+To run a specific test file: `pytest tests/test_text_box.py`
 
-To run a single test function:
-`pytest tests/test_text_box.py::test_function_name`
+To run a single test function: `pytest tests/test_text_box.py::test_function_name`
 
-To run tests with coverage:
-`pytest --cov=piltext --cov-report=term`
+To run tests with coverage: `pytest --cov=piltext --cov-report=term`
 
 ### Linting and Formatting
 
-This project uses `ruff` for linting and formatting, and `prettier` for other file types. These are enforced by pre-commit hooks.
+This project uses `ruff` for linting and formatting, and `prettier` for other file
+types. These are enforced by pre-commit hooks.
 
 Run linting and formatting:
 `ruff check --fix --exit-non-zero-on-fix --config=.ruff.toml`
@@ -109,9 +113,12 @@ docs/                   # Documentation
 
 ## Code Style
 
-- **Formatting**: Adhere to the `ruff` and `prettier` configurations. Maximum line length is 88 characters.
-- **Imports**: Follow the `isort` configuration in `.ruff.toml`. Imports are grouped into `future`, `standard-library`, `third-party`, `first-party`, and `local-folder`.
-- **Naming**: Use `snake_case` for functions and variables, and `PascalCase` for classes.
+- **Formatting**: Adhere to the `ruff` and `prettier` configurations. Maximum line
+  length is 88 characters.
+- **Imports**: Follow the `isort` configuration in `.ruff.toml`. Imports are grouped
+  into `future`, `standard-library`, `third-party`, `first-party`, and `local-folder`.
+- **Naming**: Use `snake_case` for functions and variables, and `PascalCase` for
+  classes.
 - **Types**: Add type hints for all new functions and methods.
 - **Error Handling**: Use standard `try...except` blocks for error handling.
 
@@ -121,7 +128,9 @@ docs/                   # Documentation
 
 When working on the code, be aware of these common issues:
 
-1. PIL/Pillow version compatibility: Check that your code works with the minimum supported Pillow version
-2. Font handling across platforms: Font loading behavior can differ between operating systems
-3. Type hints: Ensure proper typing for all functions, especially when working with PIL objects
-
+1. PIL/Pillow version compatibility: Check that your code works with the minimum
+   supported Pillow version
+2. Font handling across platforms: Font loading behavior can differ between operating
+   systems
+3. Type hints: Ensure proper typing for all functions, especially when working with PIL
+   objects
