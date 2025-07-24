@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from PIL import Image, ImageOps
 
@@ -34,7 +34,7 @@ class ImageHandler:
         if inverted:
             self.image = ImageOps.invert(self.image)
 
-    def show(self, title: str | None = None) -> None:
+    def show(self, title: Optional[str] = None) -> None:
         """Display the image."""
         # PIL.Image.show() does not accept 'title' in all versions
         if title is not None:
@@ -45,6 +45,8 @@ class ImageHandler:
         else:
             self.image.show()
 
-    def paste(self, im: Any, box: tuple | None = None, mask: Any | None = None) -> None:
+    def paste(
+        self, im: Any, box: Optional[tuple] = None, mask: Optional[Any] = None
+    ) -> None:
         """Paste another image onto this one."""
         self.image.paste(im, box=box, mask=mask)

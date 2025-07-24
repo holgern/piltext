@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 from PIL import Image
 
@@ -22,8 +23,8 @@ class ImageSquares:
         fg_color: str = "#4CAF50",
         empty_color: str = "#e0e0e0",
         gap: int = 2,
-        rows: int | None = None,
-        columns: int | None = None,
+        rows: Optional[int] = None,
+        columns: Optional[int] = None,
         border_width: int = 1,
         border_color: str = "#cccccc",
         show_partial: bool = True,

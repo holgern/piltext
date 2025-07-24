@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 from PIL import Image
 
@@ -17,14 +18,14 @@ class ImageDial:
         percentage: float,
         font_manager: FontManager,
         size: int = 200,
-        radius: int | None = None,
+        radius: Optional[int] = None,
         bg_color: str = "white",
         fg_color: str = "#4CAF50",
         track_color: str = "#e0e0e0",
         thickness: int = 20,
-        font_name: str | None = None,
-        font_size: int | None = None,
-        font_variation: str | None = None,
+        font_name: Optional[str] = None,
+        font_size: Optional[int] = None,
+        font_variation: Optional[str] = None,
         show_needle: bool = True,
         show_ticks: bool = True,
         show_value: bool = True,
