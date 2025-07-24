@@ -29,6 +29,15 @@ class TextGrid:
         self.merged_cells = {}
         self.grid2pixel = {}  # (row, col) => (x1, y1, x2, y2)
 
+    def _get_or_compute_cell(self, row, col):
+        if (row, col) not in self.grid2pixel:
+            x1 = int(col * self.cell_width + self.margin_x)
+            y1 = int(row * self.cell_height + self.margin_y)
+            x2 = int((col + 1) * self.cell_width - self.margin_x)
+            y2 = int((row + 1) * self.cell_height - self.margin_y)
+            self.grid2pixel[(row, col)] = [x1, y1, x2, y2]
+        return self.grid2pixel[(row, col)]
+
     def get_grid(self, start, end=None, convert_to_pixel=False):
         """Returns Grid cell or pixel coordinates.
         Args:
@@ -46,19 +55,33 @@ class TextGrid:
               part of a merged group.
             - If `start` is an integer, it retrieves the corresponding
               merged cell coordinates.
+
+        Raises:
+            ValueError: If grid coordinates cannot be determined from start and end.
+            IndexError: If merged cell index is out of range.
         """
-        if end is None and isinstance(start, tuple):
+        start_grid, end_grid = None, None
+
+        if end is not None:
+            start_grid = start
+            end_grid = end
+        elif isinstance(start, tuple) and len(start) == 2:
             row, col = start
-            # Check if this cell is part of a merged group
             if (row, col) in self.merged_cells:
                 start_grid, end_grid = self.merged_cells[(row, col)]
             else:
-                start_grid, end_grid = (row, col), (row, col)
-        elif end is None and isinstance(start, int):
-            start_grid, end_grid = self.get_merged_cells_list()[start]
-        else:
-            start_grid = start
-            end_grid = end
+                start_grid, end_grid = start, start
+        elif isinstance(start, int):
+            try:
+                start_grid, end_grid = self.get_merged_cells_list()[start]
+            except IndexError as e:
+                raise IndexError(f"Merged cell index {start} is out of range.") from e
+
+        if start_grid is None or end_grid is None:
+            raise ValueError(
+                f"Could not determine grid coordinates for start={start}, end={end}"
+            )
+
         if convert_to_pixel:
             return self._grid_to_pixels(start_grid, end_grid)
         return start_grid, end_grid
@@ -77,20 +100,10 @@ class TextGrid:
 
     def _grid_to_pixels(self, start_grid, end_grid):
         """Compute pixel coordinates for a grid region."""
-
-        def get_or_compute_cell(row, col):
-            if (row, col) not in self.grid2pixel:
-                x1 = int(col * self.cell_width + self.margin_x)
-                y1 = int(row * self.cell_height + self.margin_y)
-                x2 = int((col + 1) * self.cell_width - self.margin_x)
-                y2 = int((row + 1) * self.cell_height - self.margin_y)
-                self.grid2pixel[(row, col)] = [x1, y1, x2, y2]
-            return self.grid2pixel[(row, col)]
-
         x1s, y1s, x2s, y2s = [], [], [], []
         for row in range(start_grid[0], end_grid[0] + 1):
             for col in range(start_grid[1], end_grid[1] + 1):
-                x1, y1, x2, y2 = get_or_compute_cell(row, col)
+                x1, y1, x2, y2 = self._get_or_compute_cell(row, col)
                 x1s.append(x1)
                 y1s.append(y1)
                 x2s.append(x2)
@@ -117,7 +130,25 @@ class TextGrid:
             self.merge(start_grid, end_grid)
 
     def _get_cell_dimensions(self, start, end=None):
-        """Get pixel width and height of a grid cell or merged cell."""
+        """
+        Get pixel width and height of a grid cell or merged cell.
+
+        Args:
+            start (tuple[int, int] | int): Grid cell coordinates (row, col) or index.
+                Must not be None.
+            end (tuple[int, int], optional): Optional end for merged cell ranges.
+
+        Returns:
+            ((int, int), (int, int), int, int):
+                - (x1, y1): top-left pixel coordinates
+                - (x2, y2): bottom-right pixel coordinates
+                - width: pixel width
+                - height: pixel height
+        Raises:
+            ValueError: If start is None.
+        """
+        if start is None:
+            raise ValueError("start cannot be None in _get_cell_dimensions")
         (x1, y1), (x2, y2) = self.get_grid(start, end=end, convert_to_pixel=True)
         width = x2 - x1
         height = y2 - y1
@@ -133,11 +164,12 @@ class TextGrid:
         anchor="lt",
         **kwargs,
     ):
-        """Place text within a grid cell or merged cell range.
+        """
+        Place text within a grid cell or merged cell range.
 
         Args:
             start (tuple[int, int] | int): If a tuple, it represents (row, col)
-                in the grid.
+                in the grid. Must not be None.
                 If an integer, it refers to a merged cell index.
             text (str): The text to be displayed.
             end (tuple[int, int], optional): The bottom-right coordinate of a
@@ -154,7 +186,11 @@ class TextGrid:
             - If `start` is an integer, it retrieves the corresponding
               merged cell coordinates.
             - The text position is determined based on the anchor.
+        Raises:
+            ValueError: If start is None.
         """
+        if start is None:
+            raise ValueError("start cannot be None in set_text")
         (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
 
         if anchor not in ["rs"]:
@@ -196,9 +232,9 @@ class TextGrid:
             }
         """
         start_grid, end_grid = self.get_grid(start, end)
-        (x1, y1), (x2, y2) = self.get_grid(start_grid, end_grid, convert_to_pixel=True)
-        width = x2 - x1
-        height = y2 - y1
+        (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(
+            start_grid, end_grid
+        )
         if verbose:
             print(f"Grid cell from {start_grid} to {end_grid}")
             print(f"Pixel coords: (x1={x1}, y1={y1}) to (x2={x2}, y2={y2})")
@@ -214,30 +250,40 @@ class TextGrid:
         }
 
     def modify_grid2pixel(self, start, d_x1=0, d_y1=0, d_x2=0, d_y2=0):
-        """Modify a cell's pixel region by expanding/shrinking width/height.
+        """Modify a cell's pixel region by adjusting its boundaries.
 
         Args:
             start (tuple[int, int] | int): Starting grid cell or merged cell index.
-            d_x1 (int): Pixels to expand (positive) or shrink (negative) width-wise.
-            d_y1 (int): Pixels to expand (positive) or shrink (negative) width-wise.
-            d_x2 (int): Pixels to expand (positive) or shrink (negative) width-wise.
-            d_y2 (int): Pixels to expand (positive) or shrink (negative) width-wise.
+            d_x1 (int): Pixels to adjust the left boundary. Positive expands,
+                negative shrinks.
+            d_y1 (int): Pixels to adjust the top boundary. Positive expands,
+                negative shrinks.
+            d_x2 (int): Pixels to adjust the right boundary. Positive expands,
+                negative shrinks.
+            d_y2 (int): Pixels to adjust the bottom boundary. Positive expands,
+                negative shrinks.
         """
         start_grid, end_grid = self.get_grid(start, end=None)
 
-        for row in range(start_grid[0], end_grid[0] + 1):
+        # Apply vertical changes
+        if d_y1 != 0:
+            row = start_grid[0]
             for col in range(start_grid[1], end_grid[1] + 1):
-                if (row, col) not in self.grid2pixel:
-                    continue
+                self._get_or_compute_cell(row, col)[1] -= d_y1
+        if d_y2 != 0:
+            row = end_grid[0]
+            for col in range(start_grid[1], end_grid[1] + 1):
+                self._get_or_compute_cell(row, col)[3] += d_y2
 
-                x1, y1, x2, y2 = self.grid2pixel[(row, col)]
-
-                # Modify current cell
-                x1 += d_x1
-                x2 += d_x2
-                y1 += d_y1
-                y2 += d_y2
-                self.grid2pixel[(row, col)] = [x1, y1, x2, y2]
+        # Apply horizontal changes
+        if d_x1 != 0:
+            col = start_grid[1]
+            for row in range(start_grid[0], end_grid[0] + 1):
+                self._get_or_compute_cell(row, col)[0] -= d_x1
+        if d_x2 != 0:
+            col = end_grid[1]
+            for row in range(start_grid[0], end_grid[0] + 1):
+                self._get_or_compute_cell(row, col)[2] += d_x2
 
     def modify_row_height(self, row, delta_y1=0, delta_y2=0):
         """
@@ -255,8 +301,8 @@ class TextGrid:
 
         for col in range(self.cols):
             key = (row, col)
-            if key not in self.grid2pixel:
-                continue
+            # if key not in self.grid2pixel:
+            #    continue
 
             merged_start, merged_end = self.get_grid(key)
             merged_key = (merged_start, merged_end)
@@ -266,7 +312,7 @@ class TextGrid:
 
             self.modify_grid2pixel(
                 merged_start,
-                d_y1=delta_y1 if merged_start[0] == row else 0,
+                d_y1=-delta_y1 if merged_start[0] == row else 0,
                 d_y2=delta_y2 if merged_end[0] == row else 0,
             )
             modified.add(merged_key)

@@ -125,6 +125,48 @@ class TestGrid(unittest.TestCase):
             anchor="lt",
         )
 
+    def test_get_dimensions(self):
+        """Test get_dimensions for single and merged cells."""
+        # Single cell (0,0)
+        dims = self.grid.get_dimensions((0, 0))
+        self.assertEqual(dims["start"], (0, 0))
+        self.assertEqual(dims["end"], (0, 0))
+        self.assertEqual(dims["x"], 0)
+        self.assertEqual(dims["y"], 0)
+        self.assertEqual(dims["width"], 120)
+        self.assertEqual(dims["height"], 70)
+
+        # Multi-cell (merged) (1,1) to (2,2)
+        dims_merged = self.grid.get_dimensions((1, 1), end=(2, 2))
+        self.assertEqual(dims_merged["start"], (1, 1))
+        self.assertEqual(dims_merged["end"], (2, 2))
+        self.assertEqual(dims_merged["x"], 120)
+        self.assertEqual(dims_merged["y"], 70)
+        self.assertEqual(dims_merged["width"], 240)
+        self.assertEqual(dims_merged["height"], 140)
+
+    def test_modify_grid2pixel(self):
+        """Test modifying a cell's pixel region."""
+        # Modify a single cell
+        self.grid.modify_grid2pixel((0, 0), d_x1=10, d_y1=5, d_x2=10, d_y2=5)
+        (x1, y1), (x2, y2) = self.grid.get_grid((0, 0), convert_to_pixel=True)
+        self.assertEqual(x1, -10)
+        self.assertEqual(y1, -5)
+        self.assertEqual(x2, 130)
+        self.assertEqual(y2, 75)
+
+        # Reset grid for next test
+        self.setUp()
+
+        # Modify a merged cell region
+        self.grid.merge((1, 1), (2, 2))
+        self.grid.modify_grid2pixel((1, 1), d_x1=20, d_y1=15, d_x2=20, d_y2=15)
+        (x1, y1), (x2, y2) = self.grid.get_grid((1, 1), convert_to_pixel=True)
+        self.assertEqual(x1, 100)  # 120 - 20
+        self.assertEqual(y1, 55)  # 70 - 15
+        self.assertEqual(x2, 380)  # 360 + 20
+        self.assertEqual(y2, 225)  # 210 + 15
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -35,7 +35,6 @@ class TextBox:
             font = self.font_manager.build_font(
                 font_name, font_size, variation_name=font_variation
             )
-        return font
 
     def draw_text(self, draw: ImageDraw, xy, font, **kwargs):
         """Draw the text using the given font."""
