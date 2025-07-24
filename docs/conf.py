@@ -7,6 +7,7 @@
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../piltext"))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -42,8 +43,11 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 # html_theme = 'furo'
 
+html_theme = "sphinx_rtd_theme"
+
 html_theme_options = {
-    "features": ["toc.follow"],
+    "navigation_depth": 4,
+    "titles_only": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
