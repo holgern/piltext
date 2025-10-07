@@ -18,6 +18,8 @@ requires-python = ">3.8.0"
 dependencies = [
     "Pillow",
     "typer",
+    "PyYAML",
+    "rich-pixels",
 ]
 license = {file = "LICENSE"}
 classifiers=[
