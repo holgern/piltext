@@ -2,7 +2,16 @@ from typing import Annotated, Optional
 
 import typer
 
-from piltext.font_manager import FontManager
+from .config_loader import ConfigLoader
+from .font_manager import FontManager
+
+try:
+    from rich.console import Console
+    from rich_pixels import Pixels
+
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
 
 app = typer.Typer(
     name="piltext",
@@ -152,6 +161,131 @@ def delete_all_fonts(
             typer.echo(f"  - {font}")
     else:
         typer.echo("No fonts to delete")
+
+
+def display_as_ascii(image_path: str, width: int = 80, simple: bool = False):
+    from PIL import Image
+
+    img = Image.open(image_path).convert("L")
+    aspect_ratio = img.height / img.width
+    height = int(width * aspect_ratio * 0.5)
+    img = img.resize((width, height))
+
+    if simple:
+        ascii_chars = " .#"
+    else:
+        ascii_chars = " .:-=+*#%@"
+
+    pixels = img.getdata()
+    ascii_str = ""
+    for i, pixel in enumerate(pixels):
+        ascii_str += ascii_chars[pixel * len(ascii_chars) // 256]
+        if (i + 1) % width == 0:
+            ascii_str += "\n"
+
+    typer.echo(ascii_str)
+
+
+@app.command("render")
+def render_from_config(
+    config: Annotated[str, typer.Argument(help="Path to YAML configuration file")],
+    output: Annotated[
+        Optional[str],
+        typer.Option("--output", "-o", help="Output image file path (PNG)"),
+    ] = None,
+    display: Annotated[
+        bool,
+        typer.Option(
+            "--display", "-d", help="Display image in terminal using rich-pixels"
+        ),
+    ] = False,
+    ascii_art: Annotated[
+        bool,
+        typer.Option("--ascii", "-a", help="Display image as ASCII art"),
+    ] = False,
+    simple_ascii: Annotated[
+        bool,
+        typer.Option(
+            "--simple", "-s", help="Use simple ASCII characters (space, dot, hash)"
+        ),
+    ] = False,
+    display_width: Annotated[
+        Optional[int],
+        typer.Option(
+            "--display-width", help="Width for terminal display (in characters)"
+        ),
+    ] = None,
+    display_height: Annotated[
+        Optional[int],
+        typer.Option(
+            "--display-height", help="Height for terminal display (in characters)"
+        ),
+    ] = None,
+):
+    import os
+    import tempfile
+
+    try:
+        loader = ConfigLoader(config)
+
+        if display and not RICH_AVAILABLE:
+            typer.echo(
+                "Error: rich-pixels not installed. Install with: pip install rich-pixels",
+                err=True,
+            )
+            raise typer.Exit(1)
+
+        resize = None
+        if display_width is not None or display_height is not None:
+            resize = (display_width, display_height)
+
+        if ascii_art and not output:
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                temp_path = tmp.name
+                loader.render(output_path=temp_path)
+                display_as_ascii(
+                    temp_path, width=display_width or 80, simple=simple_ascii
+                )
+                os.unlink(temp_path)
+        elif ascii_art and output:
+            loader.render(output_path=output)
+            typer.echo(f"Image saved to: {output}")
+            display_as_ascii(output, width=display_width or 80, simple=simple_ascii)
+        elif display and not output:
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                temp_path = tmp.name
+                loader.render(output_path=temp_path)
+
+                if RICH_AVAILABLE:
+                    console = Console()  # type: ignore
+                    pixels = Pixels.from_image_path(temp_path, resize=resize)  # type: ignore
+                    console.print(pixels)
+
+                os.unlink(temp_path)
+        elif display and output:
+            loader.render(output_path=output)
+            typer.echo(f"Image saved to: {output}")
+
+            if RICH_AVAILABLE:
+                console = Console()  # type: ignore
+                pixels = Pixels.from_image_path(output, resize=resize)  # type: ignore
+                console.print(pixels)
+        elif output:
+            loader.render(output_path=output)
+            typer.echo(f"Image saved to: {output}")
+        else:
+            typer.echo(
+                "Please specify --output to save or --display to show in terminal",
+                err=True,
+            )
+            raise typer.Exit(1)
+
+    except FileNotFoundError as e:
+        typer.echo(f"Error: Config file not found - {e}", err=True)
+        raise typer.Exit(1) from None
+    except Exception as e:
+        typer.echo(f"Error rendering image: {e}", err=True)
+        raise typer.Exit(1) from None
 
 
 if __name__ == "__main__":

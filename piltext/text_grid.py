@@ -154,6 +154,47 @@ class TextGrid:
         height = y2 - y1
         return (x1, y1), (x2, y2), width, height
 
+    def _calculate_anchor_position(self, x1, y1, x2, y2, anchor):
+        """Calculate the actual position for text based on anchor and bounding box.
+
+        PIL's text anchor expects the xy parameter to be at the anchor point.
+        For example, if anchor="mm" (middle-middle), xy should be the center.
+
+        Args:
+            x1, y1: Top-left corner of bounding box
+            x2, y2: Bottom-right corner of bounding box
+            anchor: Two-character anchor string (e.g., "lt", "mm", "rb")
+
+        Returns:
+            (x, y): The position to pass to draw.text()
+        """
+        if len(anchor) != 2:
+            anchor = "lt"
+
+        # Horizontal position
+        h_anchor = anchor[1]  # second char: l=left, m=middle, r=right
+        if h_anchor == "l":
+            x = x1
+        elif h_anchor == "m":
+            x = (x1 + x2) / 2
+        elif h_anchor == "r":
+            x = x2
+        else:
+            x = x1
+
+        # Vertical position
+        v_anchor = anchor[0]  # first char: t=top, m=middle, b=bottom, s=baseline
+        if v_anchor == "t":
+            y = y1
+        elif v_anchor == "m":
+            y = (y1 + y2) / 2
+        elif v_anchor == "b" or v_anchor == "s":
+            y = y2
+        else:
+            y = y1
+
+        return (x, y)
+
     def set_text(
         self,
         start,
@@ -193,26 +234,18 @@ class TextGrid:
             raise ValueError("start cannot be None in set_text")
         (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
 
-        if anchor not in ["rs"]:
-            return self.image_drawer.draw_text(
-                text,
-                (x1, y1),
-                end=(x2, y2),
-                font_name=font_name,
-                font_variation=font_variation,
-                anchor=anchor,
-                **kwargs,
-            )
-        else:
-            return self.image_drawer.draw_text(
-                text,
-                (x2, y2),
-                end=(x1, y1),
-                font_name=font_name,
-                font_variation=font_variation,
-                anchor=anchor,
-                **kwargs,
-            )
+        # Calculate the actual position based on anchor
+        position = self._calculate_anchor_position(x1, y1, x2, y2, anchor)
+
+        return self.image_drawer.draw_text(
+            text,
+            position,
+            end=(x2, y2),
+            font_name=font_name,
+            font_variation=font_variation,
+            anchor=anchor,
+            **kwargs,
+        )
 
     def get_dimensions(self, start, end=None, verbose=False):
         """Print and return the pixel dimensions of a grid or merged cell.
