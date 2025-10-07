@@ -10,7 +10,7 @@ class TextBox:
 
     def fit_text(
         self,
-        draw: ImageDraw,
+        draw: ImageDraw.ImageDraw,
         max_width: int,
         max_height: int,
         font_name=None,
@@ -36,7 +36,7 @@ class TextBox:
                 font_name, font_size, variation_name=font_variation
             )
 
-    def draw_text(self, draw: ImageDraw, xy, font, **kwargs):
+    def draw_text(self, draw: ImageDraw.ImageDraw, xy, font, **kwargs):
         """Draw the text using the given font."""
         draw.text(xy, self.text, font=font, **kwargs)
 

@@ -139,3 +139,5 @@ dmypy.json
 
 #version
 piltext/_version.py
+
+.serena/
