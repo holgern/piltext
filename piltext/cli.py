@@ -177,9 +177,14 @@ def _extract_text_and_colors(loader: ConfigLoader):
 
 
 def _handle_text_only(
-    loader: ConfigLoader, display_width: Optional[int], line_spacing: int
+    loader: ConfigLoader,
+    display_width: Optional[int],
+    line_spacing: int,
+    borders: bool,
 ):
     texts, colors, anchors, grid_config = _extract_text_and_colors(loader)
+    if borders:
+        grid_config["draw_borders"] = True
     readable_output = display_readable_text(
         texts,
         width=display_width or 80,
@@ -197,7 +202,9 @@ def _handle_ascii_art(
     output: Optional[str],
     display_width: Optional[int],
     simple_ascii: bool,
+    borders: bool,
 ):
+    _prepare_grid_with_borders(loader, borders)
     if output:
         img = loader.render(output_path=output)
         typer.echo(f"Image saved to: {output}")
@@ -217,9 +224,12 @@ def _handle_display(
     loader: ConfigLoader,
     output: Optional[str],
     resize: Optional[tuple[Optional[int], Optional[int]]],
+    borders: bool,
 ):
     import os
     import tempfile
+
+    _prepare_grid_with_borders(loader, borders)
 
     if output:
         loader.render(output_path=output)
@@ -239,6 +249,15 @@ def _handle_display(
 
     if temp_path:
         os.unlink(temp_path)
+
+
+def _prepare_grid_with_borders(loader: ConfigLoader, borders: bool):
+    if not borders:
+        return None
+    grid = loader.create_grid()
+    if grid:
+        grid.draw_grid_borders()
+    return grid
 
 
 @app.command("render")
@@ -289,6 +308,10 @@ def render_from_config(
             help="Number of blank lines between text items (for --text-only)",
         ),
     ] = 1,
+    borders: Annotated[
+        bool,
+        typer.Option("--borders", "-b", help="Draw grid borders around cells"),
+    ] = False,
 ):
     try:
         loader = ConfigLoader(config)
@@ -306,12 +329,13 @@ def render_from_config(
             resize = (display_width, display_height)
 
         if text_only:
-            _handle_text_only(loader, display_width, line_spacing)
+            _handle_text_only(loader, display_width, line_spacing, borders)
         elif ascii_art or simple_ascii:
-            _handle_ascii_art(loader, output, display_width, simple_ascii)
+            _handle_ascii_art(loader, output, display_width, simple_ascii, borders)
         elif display:
-            _handle_display(loader, output, resize)
+            _handle_display(loader, output, resize, borders)
         elif output:
+            _prepare_grid_with_borders(loader, borders)
             loader.render(output_path=output)
             typer.echo(f"Image saved to: {output}")
         else:

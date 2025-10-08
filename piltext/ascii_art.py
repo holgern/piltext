@@ -249,6 +249,180 @@ def _build_grid_line(
     return line_parts
 
 
+def _build_grid_line_with_borders_before_removal(
+    aligned_text: str,
+    grid_row: list[str],
+    start_col: int,
+    end_col: int,
+    columns: int,
+    cell_width: int,
+) -> list[str]:
+    """
+    Build a grid line with text before border removal.
+    Text is aligned for content-only width (no gaps), then distributed into cells.
+    Border removal will add gaps between cells, but text is already in the right cells.
+    """
+    chars_per_cell = cell_width - 2
+
+    text_idx = 0
+    line_parts = []
+
+    for col in range(columns):
+        if col >= start_col and col <= end_col:
+            content = aligned_text[text_idx : text_idx + chars_per_cell]
+            if len(content) < chars_per_cell:
+                content = content.ljust(chars_per_cell)
+
+            line_parts.append("|" + content + "|")
+            text_idx += chars_per_cell
+        else:
+            line_parts.append(grid_row[col])
+
+    return line_parts
+
+
+def _build_grid_line_with_borders(
+    text: str,
+    grid_row: list[str],
+    start_col: int,
+    end_col: int,
+    columns: int,
+    cell_width: int,
+    h_align: str = "m",
+) -> list[str]:
+    """
+    Build a single line of the grid with borders and aligned text.
+    Grid row is AFTER border removal. Each cell has cell_width chars.
+    For merged cells: |content | content | content|
+    Total visual width = num_cells * cell_width
+    Total content width = (num_cells * cell_width) - 2 (for the two border chars)
+    """
+    line_parts = []
+    chars_per_cell = cell_width - 2
+    num_merged = end_col - start_col + 1
+
+    if num_merged == 1:
+        for col in range(columns):
+            if col == start_col:
+                current_cell = grid_row[col]
+                left_border = current_cell[0]
+                right_border = current_cell[-1]
+                aligned_text = _align_text(text, chars_per_cell, h_align)
+                line_parts.append(left_border + aligned_text + right_border)
+            else:
+                line_parts.append(grid_row[col])
+    else:
+        total_visual_width = num_merged * cell_width
+        total_content_width = total_visual_width - 2
+        aligned_text = _align_text(text, total_content_width, h_align)
+
+        text_idx = 0
+        for col in range(columns):
+            if col >= start_col and col <= end_col:
+                if col == start_col:
+                    chunk_size = cell_width - 1
+                    chunk = aligned_text[text_idx : text_idx + chunk_size]
+                    if len(chunk) < chunk_size:
+                        chunk = chunk.ljust(chunk_size)
+                    line_parts.append("|" + chunk)
+                    text_idx += chunk_size
+                elif col == end_col:
+                    chunk_size = cell_width - 1
+                    chunk = aligned_text[text_idx : text_idx + chunk_size]
+                    if len(chunk) < chunk_size:
+                        chunk = chunk.ljust(chunk_size)
+                    line_parts.append(chunk + "|")
+                    text_idx += chunk_size
+                else:
+                    chunk = aligned_text[text_idx : text_idx + cell_width]
+                    if len(chunk) < cell_width:
+                        chunk = chunk.ljust(cell_width)
+                    line_parts.append(chunk)
+                    text_idx += cell_width
+            else:
+                line_parts.append(grid_row[col])
+
+    return line_parts
+
+
+def _get_merged_regions(
+    texts: list[str],
+    merge_cells: list,
+    text_items: list,
+) -> dict:
+    """
+    Build a dictionary mapping cell coordinates to their merged region.
+    """
+    merged_regions = {}
+    for i in range(len(texts)):
+        position = _get_cell_position(i, merge_cells, text_items)
+        if position is None:
+            continue
+        start_pos, end_pos = position
+        start_row, start_col = start_pos
+        end_row, end_col = end_pos
+        for r in range(start_row, end_row + 1):
+            for c in range(start_col, end_col + 1):
+                merged_regions[(r, c)] = (start_row, start_col, end_row, end_col)
+    return merged_regions
+
+
+def _remove_internal_borders(
+    grid: list[list[str]],
+    merged_regions: dict,
+    actual_rows: int,
+    columns: int,
+    cell_width: int,
+    cell_height: int,
+) -> list[tuple[int, int, int, int]]:
+    """
+    Remove internal borders within merged cells and return list of merged regions.
+    Returns list of (start_row, start_col, end_row, end_col) tuples.
+    """
+    processed = set()
+    merged_list = []
+
+    for (_row, _col), (sr, sc, er, ec) in merged_regions.items():
+        if (sr, sc, er, ec) in processed:
+            continue
+        processed.add((sr, sc, er, ec))
+        merged_list.append((sr, sc, er, ec))
+
+        for r in range(sr, er + 1):
+            grid_row_base = r * (cell_height + 1)
+
+            for line in range(1, cell_height + 1):
+                grid_row_idx = grid_row_base + line
+                for c in range(sc, ec + 1):
+                    current = grid[grid_row_idx][c]
+                    left_border = "|" if c == sc else " "
+                    right_border = "|" if c == ec else " "
+                    content = current[1:-1]
+                    grid[grid_row_idx][c] = left_border + content + right_border
+
+            if r < er:
+                border_row_idx = grid_row_base + cell_height + 1
+                if border_row_idx < len(grid):
+                    for c in range(sc, ec + 1):
+                        left_corner = "+" if c == sc else " "
+                        right_corner = "+" if c == ec else " "
+                        content = " " * (cell_width - 2)
+                        grid[border_row_idx][c] = left_corner + content + right_corner
+
+        for r in range(sr, er + 1):
+            for border_row in [r * (cell_height + 1), (r + 1) * (cell_height + 1)]:
+                if border_row >= len(grid):
+                    continue
+                for c in range(sc, ec + 1):
+                    current = grid[border_row][c]
+                    left_corner = "+" if c == sc else "-"
+                    right_corner = "+" if c == ec else "-"
+                    content = "-" * (cell_width - 2)
+                    grid[border_row][c] = left_corner + content + right_corner
+
+    return merged_list
+
+
 def _display_grid_text(
     texts: list[str],
     width: int,
@@ -263,6 +437,7 @@ def _display_grid_text(
     columns = grid_info.get("columns", 1)
     merge_cells = grid_info.get("merge", [])
     text_items = grid_info.get("texts", [])
+    draw_borders = grid_info.get("draw_borders", False)
 
     colors_list = colors if colors else [None] * len(texts)
     anchors_list = anchors if anchors else [None] * len(texts)
@@ -276,10 +451,33 @@ def _display_grid_text(
     cell_width = width // columns
     cell_height = 3
 
-    grid = [
-        [" " * cell_width for _ in range(columns)]
-        for _ in range(actual_rows * cell_height)
-    ]
+    if draw_borders:
+        merged_regions = _get_merged_regions(texts, merge_cells, text_items)
+
+        grid = [
+            [" " * cell_width for _ in range(columns)]
+            for _ in range(actual_rows * (cell_height + 1) + 1)
+        ]
+
+        for row in range(actual_rows + 1):
+            for col in range(columns):
+                grid[row * (cell_height + 1)][col] = "+" + "-" * (cell_width - 2) + "+"
+
+        for row in range(actual_rows):
+            for line in range(1, cell_height + 1):
+                for col in range(columns):
+                    grid_row_idx = row * (cell_height + 1) + line
+                    grid[grid_row_idx][col] = "|" + " " * (cell_width - 2) + "|"
+
+        _remove_internal_borders(
+            grid, merged_regions, actual_rows, columns, cell_width, cell_height
+        )
+    else:
+        grid = [
+            [" " * cell_width for _ in range(columns)]
+            for _ in range(actual_rows * cell_height)
+        ]
+        merged_regions = {}
 
     for i, text in enumerate(texts):
         position = _get_cell_position(i, merge_cells, text_items)
@@ -299,21 +497,45 @@ def _display_grid_text(
         v_align = anchor[0] if len(anchor) > 0 else "m"
         h_align = anchor[1] if len(anchor) > 1 else "m"
 
-        aligned_text = _align_text(text, cell_w, h_align)
+        if draw_borders:
+            aligned_text = text
+        else:
+            aligned_text = _align_text(text, cell_w, h_align)
+
         color = colors_list[i] if i < len(colors_list) else None
         aligned_text = _apply_color(aligned_text, color)
 
-        text_row = _get_text_row(v_align, start_row, end_row, cell_height, cell_h)
+        text_row_offset = _get_text_row(
+            v_align, start_row, end_row, cell_height, cell_h
+        )
+
+        if draw_borders:
+            text_row = (
+                start_row * (cell_height + 1) + 1 + (text_row_offset % cell_height)
+            )
+        else:
+            text_row = text_row_offset
 
         if text_row < len(grid):
-            grid[text_row] = _build_grid_line(
-                aligned_text,
-                grid[text_row],
-                start_col,
-                end_col,
-                columns,
-                cell_width,
-            )
+            if draw_borders:
+                grid[text_row] = _build_grid_line_with_borders(
+                    aligned_text,
+                    grid[text_row],
+                    start_col,
+                    end_col,
+                    columns,
+                    cell_width,
+                    h_align,
+                )
+            else:
+                grid[text_row] = _build_grid_line(
+                    aligned_text,
+                    grid[text_row],
+                    start_col,
+                    end_col,
+                    columns,
+                    cell_width,
+                )
 
     output_lines = [("".join(row)).rstrip() for row in grid]
     return "\n".join(output_lines)
