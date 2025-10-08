@@ -96,6 +96,8 @@ def display_readable_text(
     line_spacing: int = 1,
     center: bool = True,
     colors: Optional[list[Optional[Union[str, int]]]] = None,
+    anchors: Optional[list[Optional[str]]] = None,
+    grid_info: Optional[dict] = None,
 ) -> str:
     """
     Display text content in readable ASCII format.
@@ -113,12 +115,21 @@ def display_readable_text(
     colors : list[str or int or None], optional
         List of colors for each text item. Can be hex strings (#RRGGBB),
         integers (grayscale), or None. Default is None.
+    anchors : list[str or None], optional
+        List of anchor positions for each text item (e.g., 'mm', 'lt', 'rb').
+        Default is None.
+    grid_info : dict, optional
+        Grid layout information including rows, columns, and merge cells.
+        Default is None.
 
     Returns
     -------
     str
         Formatted text output with optional ANSI color codes.
     """
+    if grid_info is not None:
+        return _display_grid_text(texts, width, colors, anchors, grid_info)
+
     if colors is None:
         colors_list: list[Optional[Union[str, int]]] = [None] * len(texts)
     else:
@@ -148,6 +159,163 @@ def display_readable_text(
         if i < len(texts) - 1:
             output_lines.extend([""] * line_spacing)
 
+    return "\n".join(output_lines)
+
+
+def _get_cell_position(
+    i: int,
+    merge_cells: list,
+    text_items: list[dict],
+) -> Optional[tuple[tuple[int, int], tuple[int, int]]]:
+    """
+    Get start and end positions for a text item in the grid.
+    """
+    if merge_cells and i < len(merge_cells):
+        return merge_cells[i][0], merge_cells[i][1]
+    elif i < len(text_items) and "start" in text_items[i]:
+        start_pos = text_items[i]["start"]
+        end_pos = text_items[i].get("end", start_pos)
+        return start_pos, end_pos
+    return None
+
+
+def _align_text(text: str, cell_w: int, h_align: str) -> str:
+    """
+    Align text horizontally within a cell.
+    """
+    text_truncated = text[:cell_w] if len(text) > cell_w else text
+    if h_align == "l":
+        return text_truncated.ljust(cell_w)
+    elif h_align == "r":
+        return text_truncated.rjust(cell_w)
+    else:
+        return text_truncated.center(cell_w)
+
+
+def _apply_color(
+    text: str,
+    color: Optional[Union[str, int]],
+) -> str:
+    """
+    Apply ANSI color code to text if color is provided.
+    """
+    if color is not None and isinstance(color, str) and color.startswith("#"):
+        ansi_code = _hex_to_ansi(color)
+        return f"{ansi_code}{text}\033[0m"
+    return text
+
+
+def _get_text_row(
+    v_align: str,
+    start_row: int,
+    end_row: int,
+    cell_height: int,
+    cell_h: int,
+) -> int:
+    """
+    Calculate the row position for text based on vertical alignment.
+    """
+    if v_align == "t":
+        return start_row * cell_height
+    elif v_align == "b":
+        return (end_row + 1) * cell_height - 1
+    else:
+        return start_row * cell_height + cell_h // 2
+
+
+def _build_grid_line(
+    aligned_text: str,
+    grid_row: list[str],
+    start_col: int,
+    end_col: int,
+    columns: int,
+    cell_width: int,
+) -> list[str]:
+    """
+    Build a single line of the grid with the aligned text.
+    """
+    line_parts = []
+    char_idx = 0
+    for col in range(columns):
+        if col >= start_col and col <= end_col:
+            chars_in_cell = min(cell_width, len(aligned_text) - char_idx)
+            if chars_in_cell > 0:
+                line_parts.append(aligned_text[char_idx : char_idx + chars_in_cell])
+                char_idx += chars_in_cell
+            else:
+                line_parts.append(" " * cell_width)
+        else:
+            line_parts.append(grid_row[col])
+    return line_parts
+
+
+def _display_grid_text(
+    texts: list[str],
+    width: int,
+    colors: Optional[list[Optional[Union[str, int]]]],
+    anchors: Optional[list[Optional[str]]],
+    grid_info: dict,
+) -> str:
+    """
+    Display text in a grid layout preserving position information.
+    """
+    rows = grid_info.get("rows", 1)
+    columns = grid_info.get("columns", 1)
+    merge_cells = grid_info.get("merge", [])
+    text_items = grid_info.get("texts", [])
+
+    colors_list = colors if colors else [None] * len(texts)
+    anchors_list = anchors if anchors else [None] * len(texts)
+
+    max_row = (
+        max([merge[1][0] for merge in merge_cells] + [rows - 1])
+        if merge_cells
+        else rows - 1
+    )
+    actual_rows = max_row + 1
+    cell_width = width // columns
+    cell_height = 3
+
+    grid = [
+        [" " * cell_width for _ in range(columns)]
+        for _ in range(actual_rows * cell_height)
+    ]
+
+    for i, text in enumerate(texts):
+        position = _get_cell_position(i, merge_cells, text_items)
+        if position is None:
+            continue
+
+        start_pos, end_pos = position
+        start_row, start_col = start_pos
+        end_row, end_col = end_pos
+
+        cell_w = (end_col - start_col + 1) * cell_width
+        cell_h = (end_row - start_row + 1) * cell_height
+
+        anchor = anchors_list[i] if i < len(anchors_list) else "mm"
+        anchor = anchor or "mm"
+
+        v_align = anchor[0] if len(anchor) > 0 else "m"
+        h_align = anchor[1] if len(anchor) > 1 else "m"
+
+        aligned_text = _align_text(text, cell_w, h_align)
+        color = colors_list[i] if i < len(colors_list) else None
+        aligned_text = _apply_color(aligned_text, color)
+
+        text_row = _get_text_row(v_align, start_row, end_row, cell_height, cell_h)
+
+        if text_row < len(grid):
+            grid[text_row] = _build_grid_line(
+                aligned_text,
+                grid[text_row],
+                start_col,
+                end_col,
+                columns,
+                cell_width,
+            )
+
+    output_lines = [("".join(row)).rstrip() for row in grid]
     return "\n".join(output_lines)
 
 

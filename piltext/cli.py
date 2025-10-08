@@ -172,19 +172,22 @@ def _extract_text_and_colors(loader: ConfigLoader):
         raise typer.Exit(1)
     texts = [item.get("text", "") for item in text_list]
     colors = [item.get("fill") for item in text_list]
-    return texts, colors
+    anchors = [item.get("anchor") for item in text_list]
+    return texts, colors, anchors, grid_config
 
 
 def _handle_text_only(
     loader: ConfigLoader, display_width: Optional[int], line_spacing: int
 ):
-    texts, colors = _extract_text_and_colors(loader)
+    texts, colors, anchors, grid_config = _extract_text_and_colors(loader)
     readable_output = display_readable_text(
         texts,
         width=display_width or 80,
         line_spacing=line_spacing,
         center=True,
         colors=colors,
+        anchors=anchors,
+        grid_info=grid_config,
     )
     typer.echo(readable_output, color=True)
 
