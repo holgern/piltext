@@ -42,14 +42,12 @@ def _convert_color(rgb: list, brightness: float) -> str:
 
 
 def display_as_ascii(
-    image_path: str,
+    img: Image.Image,
     columns: int = 80,
     width_ratio: float = 2.2,
     char: Optional[str] = None,
     monochrome: bool = False,
 ) -> str:
-    img = Image.open(image_path)
-
     img_w, img_h = img.size
     scalar = img_w * width_ratio / columns
     img_w = int(img_w * width_ratio / scalar)

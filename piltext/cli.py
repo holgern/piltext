@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 
 import typer
 
+from .ascii_art import display_as_ascii
 from .config_loader import ConfigLoader
 from .font_manager import FontManager
 
@@ -202,8 +203,6 @@ def render_from_config(
     import os
     import tempfile
 
-    from .ascii_art import display_as_ascii
-
     try:
         loader = ConfigLoader(config)
 
@@ -219,23 +218,20 @@ def render_from_config(
         if display_width is not None or display_height is not None:
             resize = (display_width, display_height)
 
-        if ascii_art and not output:
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                temp_path = tmp.name
-                loader.render(output_path=temp_path)
-                ascii_output = display_as_ascii(
-                    temp_path,
-                    columns=display_width or 80,
-                    char=" .#" if simple_ascii else None,
-                    monochrome=simple_ascii,
-                )
-                typer.echo(ascii_output)
-                os.unlink(temp_path)
-        elif ascii_art and output:
-            loader.render(output_path=output)
+        if (ascii_art or simple_ascii) and not output:
+            img = loader.render()
+            ascii_output = display_as_ascii(
+                img,
+                columns=display_width or 80,
+                char=" .#" if simple_ascii else None,
+                monochrome=simple_ascii,
+            )
+            typer.echo(ascii_output)
+        elif (ascii_art or simple_ascii) and output:
+            img = loader.render(output_path=output)
             typer.echo(f"Image saved to: {output}")
             ascii_output = display_as_ascii(
-                output,
+                img,
                 columns=display_width or 80,
                 char=" .#" if simple_ascii else None,
                 monochrome=simple_ascii,
