@@ -1,4 +1,5 @@
 # Import the classes from the modules
+from .ascii_art import display_as_ascii
 from .config_loader import ConfigLoader
 from .font_manager import FontManager
 from .image_dial import ImageDial
@@ -17,4 +18,5 @@ __all__ = [
     "ImageSquares",
     "TextBox",
     "TextGrid",
+    "display_as_ascii",
 ]

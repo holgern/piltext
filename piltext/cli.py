@@ -163,29 +163,6 @@ def delete_all_fonts(
         typer.echo("No fonts to delete")
 
 
-def display_as_ascii(image_path: str, width: int = 80, simple: bool = False):
-    from PIL import Image
-
-    img = Image.open(image_path).convert("L")
-    aspect_ratio = img.height / img.width
-    height = int(width * aspect_ratio * 0.5)
-    img = img.resize((width, height))
-
-    if simple:
-        ascii_chars = " .#"
-    else:
-        ascii_chars = " .:-=+*#%@"
-
-    pixels = img.getdata()
-    ascii_str = ""
-    for i, pixel in enumerate(pixels):
-        ascii_str += ascii_chars[pixel * len(ascii_chars) // 256]
-        if (i + 1) % width == 0:
-            ascii_str += "\n"
-
-    typer.echo(ascii_str)
-
-
 @app.command("render")
 def render_from_config(
     config: Annotated[str, typer.Argument(help="Path to YAML configuration file")],
@@ -225,12 +202,15 @@ def render_from_config(
     import os
     import tempfile
 
+    from .ascii_art import display_as_ascii
+
     try:
         loader = ConfigLoader(config)
 
         if display and not RICH_AVAILABLE:
             typer.echo(
-                "Error: rich-pixels not installed. Install with: pip install rich-pixels",
+                "Error: rich-pixels not installed. "
+                "Install with: pip install rich-pixels",
                 err=True,
             )
             raise typer.Exit(1)
@@ -243,14 +223,24 @@ def render_from_config(
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
                 temp_path = tmp.name
                 loader.render(output_path=temp_path)
-                display_as_ascii(
-                    temp_path, width=display_width or 80, simple=simple_ascii
+                ascii_output = display_as_ascii(
+                    temp_path,
+                    columns=display_width or 80,
+                    char=" .#" if simple_ascii else None,
+                    monochrome=simple_ascii,
                 )
+                typer.echo(ascii_output)
                 os.unlink(temp_path)
         elif ascii_art and output:
             loader.render(output_path=output)
             typer.echo(f"Image saved to: {output}")
-            display_as_ascii(output, width=display_width or 80, simple=simple_ascii)
+            ascii_output = display_as_ascii(
+                output,
+                columns=display_width or 80,
+                char=" .#" if simple_ascii else None,
+                monochrome=simple_ascii,
+            )
+            typer.echo(ascii_output)
         elif display and not output:
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
                 temp_path = tmp.name
