@@ -2,7 +2,7 @@ from typing import Annotated, Optional
 
 import typer
 
-from .ascii_art import display_as_ascii, display_readable_text, generate_ascii_art_text
+from .ascii_art import display_as_ascii, display_readable_text
 from .config_loader import ConfigLoader
 from .font_manager import FontManager
 
@@ -189,27 +189,6 @@ def _handle_text_only(
     typer.echo(readable_output, color=True)
 
 
-def _handle_figlet(
-    loader: ConfigLoader,
-    figlet_font: str,
-    display_width: Optional[int],
-    line_spacing: int,
-):
-    texts, colors = _extract_text_and_colors(loader)
-    try:
-        figlet_output = generate_ascii_art_text(
-            texts,
-            font=figlet_font,
-            width=display_width,
-            line_spacing=line_spacing,
-            colors=colors,
-        )
-        typer.echo(figlet_output, color=True)
-    except ImportError as e:
-        typer.echo(str(e), err=True)
-        raise typer.Exit(1) from None
-
-
 def _handle_ascii_art(
     loader: ConfigLoader,
     output: Optional[str],
@@ -288,18 +267,6 @@ def render_from_config(
             "--text-only", "-t", help="Display only the text content in readable format"
         ),
     ] = False,
-    figlet: Annotated[
-        bool,
-        typer.Option(
-            "--figlet", "-f", help="Display text as large ASCII art (requires pyfiglet)"
-        ),
-    ] = False,
-    figlet_font: Annotated[
-        str,
-        typer.Option(
-            "--figlet-font", help="FIGlet font name (e.g., standard, slant, banner)"
-        ),
-    ] = "standard",
     display_width: Annotated[
         Optional[int],
         typer.Option(
@@ -337,8 +304,6 @@ def render_from_config(
 
         if text_only:
             _handle_text_only(loader, display_width, line_spacing)
-        elif figlet:
-            _handle_figlet(loader, figlet_font, display_width, line_spacing)
         elif ascii_art or simple_ascii:
             _handle_ascii_art(loader, output, display_width, simple_ascii)
         elif display:
