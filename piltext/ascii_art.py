@@ -58,7 +58,7 @@ def display_as_ascii(
 
     grayscale_img = rgb_img.convert("L")
 
-    chars = [char] if char else [" ", ".", ":", "-", "=", "+", "*", "#", "%", "@"]
+    chars = list(char) if char else [" ", ".", ":", "-", "=", "+", "*", "#", "%", "@"]
 
     lines = []
     previous_color = ""
