@@ -1,12 +1,79 @@
+"""
+Grid-based text layout for images.
+
+This module provides the TextGrid class for creating and managing a grid-based
+layout system on images. It enables precise text and image placement within
+cells, supports cell merging, and provides utilities for text sizing and
+positioning.
+
+Examples
+--------
+Create a 3x3 grid and add text to cells:
+
+>>> from piltext import ImageDrawer, ImageHandler, TextGrid
+>>> ih = ImageHandler(1200, 800, background_color='white')
+>>> drawer = ImageDrawer(ih)
+>>> grid = TextGrid(rows=3, cols=3, image_drawer=drawer, margin_x=10, margin_y=10)
+>>> grid.set_text((0, 0), "Top Left", font_name="Arial", anchor="lt")
+>>> grid.set_text((1, 1), "Center", font_name="Arial", anchor="mm")
+>>> ih.save("grid_example.png")
+
+Merge cells and add text:
+
+>>> grid.merge((0, 0), (0, 2))  # Merge top row
+>>> grid.set_text((0, 0), "Header Text", font_name="Arial", anchor="mm")
+"""
+
+
 class TextGrid:
     def __init__(self, rows, cols, image_drawer, margin_x=0, margin_y=0):
-        """Initialize the grid.
+        """
+        Initialize a text grid layout.
 
-        - rows: Number of rows in the grid.
-        - cols: Number of columns in the grid.
-        - image_drawer: Instance of ImageDrawer to draw on.
-        - margin_x: Horizontal margin (left & right) inside each cell.
-        - margin_y: Vertical margin (top & bottom) inside each cell.
+        Parameters
+        ----------
+        rows : int
+            Number of rows in the grid.
+        cols : int
+            Number of columns in the grid.
+        image_drawer : ImageDrawer
+            Instance of ImageDrawer to draw on.
+        margin_x : int, optional
+            Horizontal margin (left & right) inside each cell in pixels.
+            Default is 0.
+        margin_y : int, optional
+            Vertical margin (top & bottom) inside each cell in pixels.
+            Default is 0.
+
+        Attributes
+        ----------
+        rows : int
+            Number of rows in the grid.
+        cols : int
+            Number of columns in the grid.
+        cell_width : float
+            Width of each cell in pixels.
+        cell_height : float
+            Height of each cell in pixels.
+        inner_cell_width : float
+            Drawable width inside each cell after margins.
+        inner_cell_height : float
+            Drawable height inside each cell after margins.
+        merged_cells : dict
+            Dictionary mapping cell coordinates to merged regions.
+
+        Examples
+        --------
+        Create a 2x3 grid with margins:
+
+        >>> from piltext import ImageHandler, ImageDrawer, TextGrid
+        >>> ih = ImageHandler(600, 400, background_color='white')
+        >>> drawer = ImageDrawer(ih)
+        >>> grid = TextGrid(2, 3, drawer, margin_x=10, margin_y=5)
+        >>> grid.cell_width
+        200.0
+        >>> grid.cell_height
+        200.0
         """
         self.rows = rows
         self.cols = cols
@@ -40,25 +107,38 @@ class TextGrid:
 
     def get_grid(self, start, end=None, convert_to_pixel=False):
         """Returns Grid cell or pixel coordinates.
-        Args:
-            start (tuple[int, int] | int): If a tuple, it represents (row, col)
-                in the grid.
-                If an integer, it refers to a merged cell index.
-            end (tuple[int, int], optional): The bottom-right coordinate of a
-                merged cell range.
-                If None, the function determines the end position based on merged cells.
-            convert_to_pixel boolean: If True the output is (x1, y1), (x2, y2),
-                otherwise the output is start_grid, end_grid
 
-        Notes:
-            - If `start` is a tuple (row, col), the function checks if the cell is
-              part of a merged group.
-            - If `start` is an integer, it retrieves the corresponding
-              merged cell coordinates.
+        Parameters
+        ----------
+        start : tuple[int, int] or int
+            If a tuple, it represents (row, col) in the grid.
+            If an integer, it refers to a merged cell index.
+        end : tuple[int, int], optional
+            The bottom-right coordinate of a merged cell range.
+            If None, the function determines the end position based on merged cells.
+        convert_to_pixel : bool, default=False
+            If True the output is (x1, y1), (x2, y2), otherwise the output is
+            start_grid, end_grid.
 
-        Raises:
-            ValueError: If grid coordinates cannot be determined from start and end.
-            IndexError: If merged cell index is out of range.
+        Returns
+        -------
+        tuple
+            If convert_to_pixel is False: (start_grid, end_grid) as grid coordinates.
+            If convert_to_pixel is True: ((x1, y1), (x2, y2)) as pixel coordinates.
+
+        Raises
+        ------
+        ValueError
+            If grid coordinates cannot be determined from start and end.
+        IndexError
+            If merged cell index is out of range.
+
+        Notes
+        -----
+        - If `start` is a tuple (row, col), the function checks if the cell is
+          part of a merged group.
+        - If `start` is an integer, it retrieves the corresponding
+          merged cell coordinates.
         """
         start_grid, end_grid = None, None
 
@@ -99,7 +179,22 @@ class TextGrid:
         return (x1, y1), (x2, y2)
 
     def _grid_to_pixels(self, start_grid, end_grid):
-        """Compute pixel coordinates for a grid region."""
+        """
+        Compute pixel coordinates for a grid region.
+
+        Parameters
+        ----------
+        start_grid : tuple of int
+            Starting grid position (row, col).
+        end_grid : tuple of int
+            Ending grid position (row, col).
+
+        Returns
+        -------
+        tuple
+            ((x1, y1), (x2, y2)) representing top-left and bottom-right
+            pixel coordinates.
+        """
         x1s, y1s, x2s, y2s = [], [], [], []
         for row in range(start_grid[0], end_grid[0] + 1):
             for col in range(start_grid[1], end_grid[1] + 1):
@@ -112,19 +207,45 @@ class TextGrid:
         return (min(x1s), min(y1s)), (max(x2s), max(y2s))
 
     def merge(self, start_grid, end_grid):
-        """Merge multiple grid cells into one.
+        """
+        Merge multiple grid cells into one region.
 
-        - start_grid: Tuple (row_start, col_start)
-        - end_grid: Tuple (row_end, col_end)
+        Parameters
+        ----------
+        start_grid : tuple of int
+            Starting grid position (row, col).
+        end_grid : tuple of int
+            Ending grid position (row, col).
+
+        Examples
+        --------
+        Merge cells to create a header spanning the top row:
+
+        >>> grid.merge((0, 0), (0, 2))  # Merge first row, columns 0-2
         """
         for row in range(start_grid[0], end_grid[0] + 1):
             for col in range(start_grid[1], end_grid[1] + 1):
                 self.merged_cells[(row, col)] = (start_grid, end_grid)
 
     def merge_bulk(self, merge_list):
-        """Merge multiple regions at once.
+        """
+        Merge multiple cell regions at once.
 
-        - merge_list: List of tuples [((row_start, col_start), (row_end, col_end)), ...]
+        Parameters
+        ----------
+        merge_list : list of tuple
+            List of merge specifications, where each element is a tuple
+            ((row_start, col_start), (row_end, col_end)).
+
+        Examples
+        --------
+        Merge multiple regions in one call:
+
+        >>> merges = [
+        ...     ((0, 0), (0, 2)),  # Top row
+        ...     ((1, 0), (2, 0))   # Left column
+        ... ]
+        >>> grid.merge_bulk(merges)
         """
         for start_grid, end_grid in merge_list:
             self.merge(start_grid, end_grid)
@@ -208,27 +329,37 @@ class TextGrid:
         """
         Place text within a grid cell or merged cell range.
 
-        Args:
-            start (tuple[int, int] | int): If a tuple, it represents (row, col)
-                in the grid. Must not be None.
-                If an integer, it refers to a merged cell index.
-            text (str): The text to be displayed.
-            end (tuple[int, int], optional): The bottom-right coordinate of a
-                merged cell range.
-                If None, the function determines the end position based on merged cells.
-            font_name (str, optional): The font to use for rendering the text.
-            anchor (str, optional): The text anchor position, e.g., "lt" (left-top) or
-                "rs" (right-side).
-            **kwargs: Additional keyword arguments for text rendering.
+        Parameters
+        ----------
+        start : tuple of int or int
+            If a tuple, represents (row, col) in the grid.
+            If an integer, refers to a merged cell index. Must not be None.
+        text : str
+            The text to be displayed.
+        end : tuple of int, optional
+            The bottom-right coordinate of a merged cell range.
+            If None, determined from merged cells.
+        font_name : str, optional
+            The font to use for rendering the text.
+        font_variation : str, optional
+            Font variation (e.g., 'Bold', 'Italic').
+        anchor : str, optional
+            The text anchor position (e.g., 'lt', 'mm', 'rs'). Default is 'lt'.
+        **kwargs
+            Additional keyword arguments for text rendering.
 
-        Notes:
-            - If `start` is a tuple (row, col), the function checks if the cell is
-              part of a merged group.
-            - If `start` is an integer, it retrieves the corresponding
-              merged cell coordinates.
-            - The text position is determined based on the anchor.
-        Raises:
-            ValueError: If start is None.
+        Raises
+        ------
+        ValueError
+            If start is None.
+
+        Notes
+        -----
+        - If `start` is a tuple (row, col), the function checks if the cell is
+          part of a merged group.
+        - If `start` is an integer, it retrieves the corresponding
+          merged cell coordinates.
+        - The text position is determined based on the anchor.
         """
         if start is None:
             raise ValueError("start cannot be None in set_text")
@@ -248,21 +379,29 @@ class TextGrid:
         )
 
     def get_dimensions(self, start, end=None, verbose=False):
-        """Print and return the pixel dimensions of a grid or merged cell.
+        """
+        Print and return the pixel dimensions of a grid or merged cell.
 
-        Args:
-            start (tuple[int, int] | int): Grid cell coordinates (row, col) or index.
-            end (tuple[int, int], optional): Optional end for merged cell ranges.
+        Parameters
+        ----------
+        start : tuple of int or int
+            Grid cell coordinates (row, col) or merged cell index.
+        end : tuple of int, optional
+            Optional end for merged cell ranges.
+        verbose : bool, optional
+            If True, print dimension information. Default is False.
 
-        Returns:
-            dict: {
-                'start': (row_start, col_start),
-                'end': (row_end, col_end),
-                'x': top-left x,
-                'y': top-left y,
-                'width': pixel: width,
-                'height': pixel height
-            }
+        Returns
+        -------
+        dict
+            Dictionary containing:
+
+            - 'start': tuple, starting grid position (row, col)
+            - 'end': tuple, ending grid position (row, col)
+            - 'x': int, top-left x coordinate
+            - 'y': int, top-left y coordinate
+            - 'width': int, pixel width
+            - 'height': int, pixel height
         """
         start_grid, end_grid = self.get_grid(start, end)
         (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(
@@ -283,18 +422,25 @@ class TextGrid:
         }
 
     def modify_grid2pixel(self, start, d_x1=0, d_y1=0, d_x2=0, d_y2=0):
-        """Modify a cell's pixel region by adjusting its boundaries.
+        """
+        Modify a cell's pixel region by adjusting its boundaries.
 
-        Args:
-            start (tuple[int, int] | int): Starting grid cell or merged cell index.
-            d_x1 (int): Pixels to adjust the left boundary. Positive expands,
-                negative shrinks.
-            d_y1 (int): Pixels to adjust the top boundary. Positive expands,
-                negative shrinks.
-            d_x2 (int): Pixels to adjust the right boundary. Positive expands,
-                negative shrinks.
-            d_y2 (int): Pixels to adjust the bottom boundary. Positive expands,
-                negative shrinks.
+        Parameters
+        ----------
+        start : tuple of int or int
+            Starting grid cell or merged cell index.
+        d_x1 : int, optional
+            Pixels to adjust the left boundary. Positive expands,
+            negative shrinks. Default is 0.
+        d_y1 : int, optional
+            Pixels to adjust the top boundary. Positive expands,
+            negative shrinks. Default is 0.
+        d_x2 : int, optional
+            Pixels to adjust the right boundary. Positive expands,
+            negative shrinks. Default is 0.
+        d_y2 : int, optional
+            Pixels to adjust the bottom boundary. Positive expands,
+            negative shrinks. Default is 0.
         """
         start_grid, end_grid = self.get_grid(start, end=None)
 
@@ -322,10 +468,14 @@ class TextGrid:
         """
         Modify the top (y1) and/or bottom (y2) of all cells in a given row.
 
-        Args:
-            row (int): Row index to adjust.
-            delta_y1 (int): Pixels to adjust the top (y1). Positive moves down.
-            delta_y2 (int): Pixels to adjust the bottom (y2). Positive moves down.
+        Parameters
+        ----------
+        row : int
+            Row index to adjust.
+        delta_y1 : int, optional
+            Pixels to adjust the top (y1). Positive moves down. Default is 0.
+        delta_y2 : int, optional
+            Pixels to adjust the bottom (y2). Positive moves down. Default is 0.
         """
         if delta_y1 == 0 and delta_y2 == 0:
             return
@@ -351,12 +501,26 @@ class TextGrid:
             modified.add(merged_key)
 
     def set_text_list(self, text_list):
-        """Set text in multiple cells at once.
+        """
+        Set text in multiple cells at once.
 
-        - text_list: List of dictionaries, each containing:
-            - "start": Tuple (row, col) indicating the starting grid position.
-            - "text": The text to place in the cell.
-            - Additional optional parameters for text formatting.
+        Parameters
+        ----------
+        text_list : list of dict
+            List of text specifications, where each dictionary contains:
+            - 'start': tuple (row, col) for cell position
+            - 'text': str, the text to display
+            - Additional optional parameters for text formatting
+
+        Examples
+        --------
+        Add text to multiple cells:
+
+        >>> texts = [
+        ...     {'start': (0, 0), 'text': 'Header', 'font_name': 'Arial'},
+        ...     {'start': (1, 0), 'text': 'Row 1', 'anchor': 'mm'}
+        ... ]
+        >>> grid.set_text_list(texts)
         """
         for text in text_list:
             start = text.pop("start")
@@ -364,27 +528,31 @@ class TextGrid:
             self.set_text(start, text_str, **text)
 
     def paste_image(self, start, image, end=None, anchor="lt", **kwargs):
-        """Place image within a grid cell or merged cell range.
+        """
+        Place image within a grid cell or merged cell range.
 
-        Args:
-            start (tuple[int, int] | int): If a tuple, it represents (row, col)
-                in the grid.
-                If an integer, it refers to a merged cell index.
-            image: The image to be displayed.
-            end (tuple[int, int], optional): The bottom-right coordinate of a
-                merged cell range.
-                If None, the function determines the end position based on merged cells.
-            anchor (str, optional): The image anchor position, e.g., "lt" (left-top) or
-                "rs" (right-side).
+        Parameters
+        ----------
+        start : tuple of int or int
+            If a tuple, represents (row, col) in the grid.
+            If an integer, refers to a merged cell index.
+        image : PIL.Image.Image
+            The image to be displayed.
+        end : tuple of int, optional
+            The bottom-right coordinate of a merged cell range.
+            If None, determined from merged cells.
+        anchor : str, optional
+            The image anchor position (e.g., 'lt', 'rs'). Default is 'lt'.
+        **kwargs
+            Additional keyword arguments for image pasting.
 
-            **kwargs: Additional keyword arguments for text rendering.
-
-        Notes:
-            - If `start` is a tuple (row, col), the function checks if the cell is
-              part of a merged group.
-            - If `start` is an integer, it retrieves the corresponding
-              merged cell coordinates.
-            - The text position is determined based on the anchor.
+        Notes
+        -----
+        - If `start` is a tuple (row, col), the function checks if the cell is
+          part of a merged group.
+        - If `start` is an integer, it retrieves the corresponding
+          merged cell coordinates.
+        - The image position is determined based on the anchor.
         """
         start_pixel, end_pixel = self.get_grid(start, end=end, convert_to_pixel=True)
         if anchor in ["rs"]:
@@ -394,7 +562,15 @@ class TextGrid:
         self.image_drawer.paste(image, box=box, **kwargs)
 
     def get_merged_cells(self):
-        """Returns a dictionary of merged cells."""
+        """
+        Get a dictionary of merged cells.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping cell coordinates to their merged region
+            boundaries ((start_row, start_col), (end_row, end_col)).
+        """
         merged_dict = {}
         for cell, merged_range in self.merged_cells.items():
             if merged_range not in merged_dict.values():
@@ -402,7 +578,15 @@ class TextGrid:
         return merged_dict
 
     def get_merged_cells_list(self):
-        """Returns a list of merged cells."""
+        """
+        Get a list of all merged cell regions.
+
+        Returns
+        -------
+        list of tuple
+            List of merged regions, where each element is
+            ((start_row, start_col), (end_row, end_col)).
+        """
         merged_list = []
         merged_dict = {}
         for cell, merged_range in self.merged_cells.items():
@@ -412,7 +596,14 @@ class TextGrid:
         return merged_list
 
     def print_grid(self):
-        """Prints a visual representation of the merged grid."""
+        """
+        Print a visual representation of the grid with merged cells.
+
+        Notes
+        -----
+        Displays a text-based visualization showing cell indices and
+        merged regions. Useful for debugging grid layouts.
+        """
         grid_display = [["." for _ in range(self.cols)] for _ in range(self.rows)]
         cell_index = 0
         for (row, col), (start, end) in self.merged_cells.items():
@@ -445,8 +636,21 @@ class TextGrid:
             row_index += 1
 
     def draw_grid_borders(self, color="gray", width=1):
-        """Draw borders around all visible grid cells
-        (respects merged and resized cells)."""
+        """
+        Draw borders around all grid cells.
+
+        Parameters
+        ----------
+        color : str, optional
+            Border color. Default is 'gray'.
+        width : int, optional
+            Border width in pixels. Default is 1.
+
+        Notes
+        -----
+        Respects merged and resized cells, drawing borders around the
+        actual visible cell boundaries.
+        """
         drawn = set()
         for row in range(self.rows):
             for col in range(self.cols):
@@ -472,24 +676,30 @@ class TextGrid:
         self, start, text, end=None, font_name=None, font_variation=None, **kwargs
     ):
         """
-        Calculates the pixel height required to display `text` in one line
-        across a full row.
+        Calculate the pixel height required to display text in one line.
 
-        Args:
-            start (tuple[int, int] | int): If a tuple, it represents (row, col)
-                in the grid.
-                If an integer, it refers to a merged cell index.
-            end (tuple[int, int], optional): The bottom-right coordinate of a
-                merged cell range.
-                If None, the function determines the end position based on
-                merged cells.
-            text (str): Text to measure.
-            font_name (str, optional): Font name to use.
-            font_variation (str, optional): Font variation/style.
-            **kwargs: Additional arguments passed to draw_text (e.g., font_size).
+        Parameters
+        ----------
+        start : tuple of int or int
+            If a tuple, represents (row, col) in the grid.
+            If an integer, refers to a merged cell index.
+        text : str
+            Text to measure.
+        end : tuple of int, optional
+            The bottom-right coordinate of a merged cell range.
+            If None, determined from merged cells.
+        font_name : str, optional
+            Font name to use.
+        font_variation : str, optional
+            Font variation/style.
+        **kwargs
+            Additional arguments passed to draw_text (e.g., font_size).
 
-        Returns:
-            int: Required pixel height.
+        Returns
+        -------
+        int
+            Required pixel height for the text to fit in one line
+            across the full row.
         """
         if not text:
             return 0

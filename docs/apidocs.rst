@@ -1,58 +1,83 @@
 API Documentation
 =================
 
-Font Manager
------------
+This section provides detailed documentation for all piltext modules and classes.
+
+Core Modules
+------------
+
+FontManager
+~~~~~~~~~~~
 
 .. automodule:: piltext.font_manager
    :members:
    :undoc-members:
    :show-inheritance:
 
-Image Dial
----------
-
-.. automodule:: piltext.image_dial
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Image Drawer
------------
+ImageDrawer
+~~~~~~~~~~~
 
 .. automodule:: piltext.image_drawer
    :members:
    :undoc-members:
    :show-inheritance:
 
-Image Handler
-------------
+ImageHandler
+~~~~~~~~~~~~
 
 .. automodule:: piltext.image_handler
    :members:
    :undoc-members:
    :show-inheritance:
 
-Image Squares
-------------
-
-.. automodule:: piltext.image_squares
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Text Box
--------
+TextBox
+~~~~~~~
 
 .. automodule:: piltext.text_box
    :members:
    :undoc-members:
    :show-inheritance:
 
-Text Grid
---------
+TextGrid
+~~~~~~~~
 
 .. automodule:: piltext.text_grid
    :members:
    :undoc-members:
    :show-inheritance:
+
+ConfigLoader
+~~~~~~~~~~~~
+
+.. automodule:: piltext.config_loader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Specialized Modules
+-------------------
+
+ImageDial
+~~~~~~~~~
+
+.. automodule:: piltext.image_dial
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ImageSquares
+~~~~~~~~~~~~
+
+.. automodule:: piltext.image_squares
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ASCIIArt
+~~~~~~~~
+
+.. automodule:: piltext.ascii_art
+   :members:
+   :undoc-members:
+   :show-inheritance:
+

@@ -2,7 +2,7 @@ Quickstart
 ==========
 
 Installation
------------
+------------
 
 You can install PILText using pip:
 
@@ -11,7 +11,7 @@ You can install PILText using pip:
    pip install piltext
 
 Basic Usage
-----------
+-----------
 
 PILText provides tools to create images with text using Pillow (PIL).
 
@@ -39,7 +39,7 @@ PILText provides tools to create images with text using Pillow (PIL).
    handler.save("hello_world.png")
 
 YAML Configuration
------------------
+------------------
 
 PILText supports YAML configuration files for easy image generation:
 
@@ -83,7 +83,7 @@ Or from Python:
    image = loader.render(output_path="output.png")
 
 Configuration Options
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 **Fonts Section:**
 
@@ -154,7 +154,7 @@ Configuration Options
 - And more PIL text anchor options
 
 CLI Commands
------------
+------------
 
 Rendering
 ~~~~~~~~~
@@ -182,7 +182,7 @@ Render from config file:
    piltext render config.yaml -o output.png -d
 
 Font Management
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 List available fonts:
 

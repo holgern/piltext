@@ -2,7 +2,7 @@ from typing import Annotated, Optional
 
 import typer
 
-from .ascii_art import display_as_ascii
+from .ascii_art import display_as_ascii, display_readable_text, generate_ascii_art_text
 from .config_loader import ConfigLoader
 from .font_manager import FontManager
 
@@ -164,6 +164,101 @@ def delete_all_fonts(
         typer.echo("No fonts to delete")
 
 
+def _extract_text_and_colors(loader: ConfigLoader):
+    grid_config = loader.config.get("grid", {})
+    text_list = grid_config.get("texts", [])
+    if not text_list:
+        typer.echo("No text content found in configuration", err=True)
+        raise typer.Exit(1)
+    texts = [item.get("text", "") for item in text_list]
+    colors = [item.get("fill") for item in text_list]
+    return texts, colors
+
+
+def _handle_text_only(
+    loader: ConfigLoader, display_width: Optional[int], line_spacing: int
+):
+    texts, colors = _extract_text_and_colors(loader)
+    readable_output = display_readable_text(
+        texts,
+        width=display_width or 80,
+        line_spacing=line_spacing,
+        center=True,
+        colors=colors,
+    )
+    typer.echo(readable_output, color=True)
+
+
+def _handle_figlet(
+    loader: ConfigLoader,
+    figlet_font: str,
+    display_width: Optional[int],
+    line_spacing: int,
+):
+    texts, colors = _extract_text_and_colors(loader)
+    try:
+        figlet_output = generate_ascii_art_text(
+            texts,
+            font=figlet_font,
+            width=display_width,
+            line_spacing=line_spacing,
+            colors=colors,
+        )
+        typer.echo(figlet_output, color=True)
+    except ImportError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(1) from None
+
+
+def _handle_ascii_art(
+    loader: ConfigLoader,
+    output: Optional[str],
+    display_width: Optional[int],
+    simple_ascii: bool,
+):
+    if output:
+        img = loader.render(output_path=output)
+        typer.echo(f"Image saved to: {output}")
+    else:
+        img = loader.render()
+
+    ascii_output = display_as_ascii(
+        img,
+        columns=display_width or 80,
+        char=" .#" if simple_ascii else None,
+        monochrome=simple_ascii,
+    )
+    typer.echo(ascii_output, color=True)
+
+
+def _handle_display(
+    loader: ConfigLoader,
+    output: Optional[str],
+    resize: Optional[tuple[Optional[int], Optional[int]]],
+):
+    import os
+    import tempfile
+
+    if output:
+        loader.render(output_path=output)
+        typer.echo(f"Image saved to: {output}")
+        image_path = output
+        temp_path = None
+    else:
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            temp_path = tmp.name
+        loader.render(output_path=temp_path)
+        image_path = temp_path
+
+    if RICH_AVAILABLE:
+        console = Console()  # type: ignore
+        pixels = Pixels.from_image_path(image_path, resize=resize)  # type: ignore
+        console.print(pixels)
+
+    if temp_path:
+        os.unlink(temp_path)
+
+
 @app.command("render")
 def render_from_config(
     config: Annotated[str, typer.Argument(help="Path to YAML configuration file")],
@@ -187,6 +282,24 @@ def render_from_config(
             "--simple", "-s", help="Use simple ASCII characters (space, dot, hash)"
         ),
     ] = False,
+    text_only: Annotated[
+        bool,
+        typer.Option(
+            "--text-only", "-t", help="Display only the text content in readable format"
+        ),
+    ] = False,
+    figlet: Annotated[
+        bool,
+        typer.Option(
+            "--figlet", "-f", help="Display text as large ASCII art (requires pyfiglet)"
+        ),
+    ] = False,
+    figlet_font: Annotated[
+        str,
+        typer.Option(
+            "--figlet-font", help="FIGlet font name (e.g., standard, slant, banner)"
+        ),
+    ] = "standard",
     display_width: Annotated[
         Optional[int],
         typer.Option(
@@ -199,10 +312,14 @@ def render_from_config(
             "--display-height", help="Height for terminal display (in characters)"
         ),
     ] = None,
+    line_spacing: Annotated[
+        int,
+        typer.Option(
+            "--line-spacing",
+            help="Number of blank lines between text items (for --text-only)",
+        ),
+    ] = 1,
 ):
-    import os
-    import tempfile
-
     try:
         loader = ConfigLoader(config)
 
@@ -218,44 +335,14 @@ def render_from_config(
         if display_width is not None or display_height is not None:
             resize = (display_width, display_height)
 
-        if (ascii_art or simple_ascii) and not output:
-            img = loader.render()
-            ascii_output = display_as_ascii(
-                img,
-                columns=display_width or 80,
-                char=" .#" if simple_ascii else None,
-                monochrome=simple_ascii,
-            )
-            typer.echo(ascii_output)
-        elif (ascii_art or simple_ascii) and output:
-            img = loader.render(output_path=output)
-            typer.echo(f"Image saved to: {output}")
-            ascii_output = display_as_ascii(
-                img,
-                columns=display_width or 80,
-                char=" .#" if simple_ascii else None,
-                monochrome=simple_ascii,
-            )
-            typer.echo(ascii_output)
-        elif display and not output:
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                temp_path = tmp.name
-                loader.render(output_path=temp_path)
-
-                if RICH_AVAILABLE:
-                    console = Console()  # type: ignore
-                    pixels = Pixels.from_image_path(temp_path, resize=resize)  # type: ignore
-                    console.print(pixels)
-
-                os.unlink(temp_path)
-        elif display and output:
-            loader.render(output_path=output)
-            typer.echo(f"Image saved to: {output}")
-
-            if RICH_AVAILABLE:
-                console = Console()  # type: ignore
-                pixels = Pixels.from_image_path(output, resize=resize)  # type: ignore
-                console.print(pixels)
+        if text_only:
+            _handle_text_only(loader, display_width, line_spacing)
+        elif figlet:
+            _handle_figlet(loader, figlet_font, display_width, line_spacing)
+        elif ascii_art or simple_ascii:
+            _handle_ascii_art(loader, output, display_width, simple_ascii)
+        elif display:
+            _handle_display(loader, output, resize)
         elif output:
             loader.render(output_path=output)
             typer.echo(f"Image saved to: {output}")
