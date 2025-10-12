@@ -63,6 +63,7 @@ class ImageHandler:
         self.height = height
         self.mode = mode
         self.background = background
+        self.image: Image.Image
         self.initialize()
 
     def initialize(self) -> None:

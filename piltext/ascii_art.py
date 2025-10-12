@@ -26,11 +26,11 @@ Use custom characters:
 >>> print(ascii_art)
 """
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from PIL import Image
 
-PALETTE = [
+PALETTE: list[list[Any]] = [
     [(0.0, 0.0, 0.0), "\033[30m", "#000000"],
     [(0.5, 0.0, 0.0), "\033[31m", "#800000"],
     [(0.0, 0.5, 0.0), "\033[32m", "#008000"],
@@ -51,7 +51,7 @@ PALETTE = [
 
 
 def _l2_min(v1: list, v2: list) -> float:
-    return (v1[0] - v2[0]) ** 2 + (v1[1] - v2[1]) ** 2 + (v1[2] - v2[2]) ** 2
+    return float((v1[0] - v2[0]) ** 2 + (v1[1] - v2[1]) ** 2 + (v1[2] - v2[2]) ** 2)
 
 
 def _hex_to_ansi(hex_color: str) -> str:
@@ -74,12 +74,12 @@ def _hex_to_ansi(hex_color: str) -> str:
     b = int(hex_color[4:6], 16)
 
     min_distance = float("inf")
-    best_code = "\033[37m"
+    best_code: str = "\033[37m"
 
     for palette_rgb, ansi_code, _ in PALETTE:
-        palette_r = int(palette_rgb[0] * 255)
-        palette_g = int(palette_rgb[1] * 255)
-        palette_b = int(palette_rgb[2] * 255)
+        palette_r = int(float(palette_rgb[0]) * 255)
+        palette_g = int(float(palette_rgb[1]) * 255)
+        palette_b = int(float(palette_rgb[2]) * 255)
 
         distance = (r - palette_r) ** 2 + (g - palette_g) ** 2 + (b - palette_b) ** 2
 
@@ -546,14 +546,14 @@ def _convert_color(rgb: list, brightness: float) -> str:
     index = 0
 
     for i in range(len(PALETTE)):
-        tmp = [v * brightness for v in PALETTE[i][0]]
+        tmp = [float(v) * brightness for v in PALETTE[i][0]]
         distance = _l2_min(tmp, rgb)
 
         if distance < min_distance:
             index = i
             min_distance = distance
 
-    return PALETTE[index][1]
+    return str(PALETTE[index][1])
 
 
 def display_as_ascii(

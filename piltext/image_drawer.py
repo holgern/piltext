@@ -4,7 +4,9 @@ This module provides the ImageDrawer class, which combines image handling,
 font management, and text rendering into a unified interface.
 """
 
-from PIL import ImageDraw
+from typing import cast
+
+from PIL import Image, ImageDraw
 
 from .font_manager import FontManager
 from .image_handler import ImageHandler
@@ -158,7 +160,7 @@ class ImageDrawer:
             mirror=mirror, orientation=orientation, inverted=inverted
         )
 
-    def get_image(self):
+    def get_image(self) -> Image.Image:
         """Get the current PIL Image object.
 
         Returns
@@ -166,7 +168,7 @@ class ImageDrawer:
         PIL.Image.Image
             The current image with all applied drawing operations.
         """
-        return self.image_handler.image
+        return cast(Image.Image, self.image_handler.image)
 
     def show(self, title=None):
         """Display the image in the default image viewer.
