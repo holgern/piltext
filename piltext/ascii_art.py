@@ -642,7 +642,7 @@ def display_as_ascii(
             pixel = rgb_img.getpixel((w, h))
 
             if isinstance(pixel, int):
-                pixel = (
+                pixel = (  # type: ignore[unreachable]
                     (pixel, pixel, 255)
                     if color_palette is None
                     else tuple(color_palette[pixel * 3 : pixel * 3 + 3])

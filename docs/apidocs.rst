@@ -80,4 +80,3 @@ ASCIIArt
    :members:
    :undoc-members:
    :show-inheritance:
-

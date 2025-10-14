@@ -6,6 +6,7 @@ directory management, and Google Fonts integration.
 
 import logging
 import os
+from typing import Any, Optional, Union
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, unquote
 from urllib.request import urlopen
@@ -49,7 +50,12 @@ class FontManager:
 
     """
 
-    def __init__(self, fontdirs=None, default_font_size=15, default_font_name=None):
+    def __init__(
+        self,
+        fontdirs: Optional[Union[str, list[str]]] = None,
+        default_font_size: int = 15,
+        default_font_name: Optional[str] = None,
+    ) -> None:
         # Use the default font directory if none provided
         if fontdirs is None:
             default_fontdir = self.get_user_font_dir()
@@ -63,9 +69,9 @@ class FontManager:
         self.fontdirs = [os.path.realpath(fontdir) for fontdir in fontdirs]
         self.default_font_name = default_font_name
         self.default_font_size = default_font_size
-        self._font_cache = {}
+        self._font_cache: dict[tuple[Optional[str], int, str], Any] = {}
 
-    def get_user_font_dir(self):
+    def get_user_font_dir(self) -> str:
         """Get the platform-specific user font directory.
 
         Returns the default font directory for the current operating system and
@@ -84,7 +90,7 @@ class FontManager:
 
         """
         if os.name == "nt":  # Windows
-            font_dir = os.path.join(os.getenv("APPDATA"), "piltext")
+            font_dir = os.path.join(os.getenv("APPDATA", ""), "piltext")
         elif os.name == "posix":  # macOS and Linux
             font_dir = os.path.join(os.path.expanduser("~"), ".config", "piltext")
         else:
@@ -94,7 +100,7 @@ class FontManager:
             os.makedirs(font_dir)
         return str(font_dir)
 
-    def get_full_path(self, font_name):
+    def get_full_path(self, font_name: str) -> str:
         """Get the full path of a font file by searching all font directories.
 
         Searches for the font file in all configured font directories, trying
@@ -125,7 +131,7 @@ class FontManager:
             f"Font '{font_name}' not found in directories: {self.fontdirs}",
         )
 
-    def download_google_font(self, part1, part2, font_name):
+    def download_google_font(self, part1: str, part2: str, font_name: str) -> str:
         """Download a font from the Google Fonts GitHub repository.
 
         Downloads a font from the Google Fonts repository on GitHub and stores it
@@ -157,7 +163,7 @@ class FontManager:
         )
         return self.download_font(google_font_url)
 
-    def download_font(self, font_url):
+    def download_font(self, font_url: str) -> str:
         """Download a font from a URL and store it in the user font directory.
 
         Downloads a font file from the specified URL and saves it to the first
@@ -206,7 +212,7 @@ class FontManager:
                 ) from e
         return os.path.splitext(font_path)[0]
 
-    def calculate_text_size(self, draw, text, font):
+    def calculate_text_size(self, draw: Any, text: str, font: Any) -> tuple[int, int]:
         """Calculate the bounding box size of text.
 
         Computes the width and height of the text when rendered with the specified
@@ -229,7 +235,7 @@ class FontManager:
         _, _, width, height = draw.textbbox((0, 0), text=text, font=font)
         return width, height
 
-    def get_variation_names(self, font_name=None):
+    def get_variation_names(self, font_name: Optional[str] = None) -> list[Any]:
         """Get available font variation names for a variable font.
 
         Retrieves the list of named variations available for a variable font,
@@ -246,9 +252,14 @@ class FontManager:
             List of variation names available for the font.
         """
         font = self.build_font(font_name=font_name)
-        return font.get_variation_names()
+        return font.get_variation_names()  # type: ignore[no-any-return]
 
-    def build_font(self, font_name=None, font_size=None, variation_name=None):
+    def build_font(
+        self,
+        font_name: Optional[str] = None,
+        font_size: Optional[int] = None,
+        variation_name: Optional[str] = None,
+    ) -> Any:
         """Create and cache a font object.
 
         Builds a PIL ImageFont object with the specified parameters. Caches font
@@ -275,6 +286,8 @@ class FontManager:
         """
         font_size = font_size or self.default_font_size
         font_name = font_name or self.default_font_name
+        if font_name is None:
+            raise ValueError("No font name specified and no default font available")
         variation_name = variation_name or "none"
         cache_key = (font_name, font_size, variation_name)
         if cache_key in self._font_cache:
@@ -287,7 +300,7 @@ class FontManager:
         self._font_cache[cache_key] = font
         return font
 
-    def add_font_directory(self, fontdir):
+    def add_font_directory(self, fontdir: str) -> None:
         """Add a new font directory to the search path.
 
         Adds a directory to the list of directories searched for font files.
@@ -304,7 +317,7 @@ class FontManager:
         else:
             print(f"Font directory '{fontdir}' already exists.")
 
-    def remove_font_directory(self, fontdir):
+    def remove_font_directory(self, fontdir: str) -> None:
         """Remove a font directory from the search path.
 
         Removes a directory from the list of directories searched for font files.
@@ -321,7 +334,7 @@ class FontManager:
         else:
             print(f"Font directory '{fontdir}' not found in the list.")
 
-    def list_font_directories(self):
+    def list_font_directories(self) -> list[str]:
         """List all configured font directories.
 
         Returns
@@ -331,7 +344,7 @@ class FontManager:
         """
         return self.fontdirs
 
-    def list_available_fonts(self, fullpath=False):
+    def list_available_fonts(self, fullpath: bool = False) -> list[str]:
         """List all available font files in the configured directories.
 
         Scans all configured font directories and returns the names of available
@@ -360,7 +373,7 @@ class FontManager:
                             available_fonts.add(os.path.splitext(file)[0])
         return list(available_fonts)
 
-    def delete_all_fonts(self):
+    def delete_all_fonts(self) -> list[str]:
         """Delete all font files from configured font directories.
 
         Removes all .ttf and .otf font files from all configured font directories.

@@ -4,6 +4,8 @@ This module provides the ConfigLoader class for loading image, font, and grid
 configurations from YAML files and creating corresponding piltext objects.
 """
 
+from typing import Any, Optional
+
 import yaml
 from PIL import ImageDraw
 
@@ -42,11 +44,11 @@ class ConfigLoader:
     - grid: Grid layout, margins, merges, and text content
     """
 
-    def __init__(self, config_path):
+    def __init__(self, config_path: str) -> None:
         with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
-    def create_font_manager(self):
+    def create_font_manager(self) -> FontManager:
         """Create a FontManager from the configuration.
 
         Reads the 'fonts' section of the configuration and creates a FontManager
@@ -87,7 +89,9 @@ class ConfigLoader:
 
         return fm
 
-    def create_image_drawer(self, font_manager=None):
+    def create_image_drawer(
+        self, font_manager: Optional[FontManager] = None
+    ) -> ImageDrawer:
         """Create an ImageDrawer from the configuration.
 
         Reads the 'image' section of the configuration and creates an ImageDrawer
@@ -120,7 +124,11 @@ class ConfigLoader:
 
         return image_drawer
 
-    def create_grid(self, image_drawer=None, font_manager=None):
+    def create_grid(
+        self,
+        image_drawer: Optional[ImageDrawer] = None,
+        font_manager: Optional[FontManager] = None,
+    ) -> Optional[TextGrid]:
         """Create a TextGrid from the configuration.
 
         Reads the 'grid' section of the configuration and creates a TextGrid
@@ -170,7 +178,7 @@ class ConfigLoader:
 
         return grid
 
-    def render(self, output_path=None):
+    def render(self, output_path: Optional[str] = None) -> Any:
         """Render the complete image from the configuration.
 
         Creates all configured objects (FontManager, ImageDrawer, TextGrid),

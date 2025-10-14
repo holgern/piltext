@@ -1,4 +1,8 @@
-from typing import Annotated, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional
+
+if TYPE_CHECKING:
+    from rich.console import Console
+    from rich_pixels import Pixels
 
 import typer
 
@@ -33,7 +37,7 @@ def list_fonts(
         Optional[str],
         typer.Option("--fontdir", "-d", help="Custom font directory to search"),
     ] = None,
-):
+) -> None:
     fm = FontManager(fontdirs=fontdir) if fontdir else FontManager()
     fonts = fm.list_available_fonts(fullpath=fullpath)
 
@@ -49,9 +53,9 @@ def list_fonts(
 def list_directories(
     fontdir: Annotated[
         Optional[str],
-        typer.Option("--fontdir", "-d", help="Custom font directory to add"),
+        typer.Option("--fontdir", "-d", help="Custom font directory to search"),
     ] = None,
-):
+) -> None:
     fm = FontManager(fontdirs=fontdir) if fontdir else FontManager()
     dirs = fm.list_font_directories()
 
@@ -74,7 +78,7 @@ def download_font(
             "--fontdir", "-d", help="Custom font directory to download font to"
         ),
     ] = None,
-):
+) -> None:
     fm = FontManager(fontdirs=fontdir) if fontdir else FontManager()
 
     try:
@@ -94,7 +98,7 @@ def download_font_url(
             "--fontdir", "-d", help="Custom font directory to download font to"
         ),
     ] = None,
-):
+) -> None:
     fm = FontManager(fontdirs=fontdir) if fontdir else FontManager()
 
     try:
@@ -112,7 +116,7 @@ def list_variations(
         Optional[str],
         typer.Option("--fontdir", "-d", help="Custom font directory to search"),
     ] = None,
-):
+) -> None:
     fm = FontManager(fontdirs=fontdir) if fontdir else FontManager()
 
     try:
@@ -142,7 +146,7 @@ def delete_all_fonts(
             "--yes", "-y", help="Skip confirmation prompt and delete all fonts"
         ),
     ] = False,
-):
+) -> None:
     fm = FontManager(fontdirs=fontdir) if fontdir else FontManager()
 
     if not confirm:
@@ -164,7 +168,9 @@ def delete_all_fonts(
         typer.echo("No fonts to delete")
 
 
-def _extract_text_and_colors(loader: ConfigLoader):
+def _extract_text_and_colors(
+    loader: ConfigLoader,
+) -> tuple[list[Any], list[Any], list[Any], dict[str, Any]]:
     grid_config = loader.config.get("grid", {})
     text_list = grid_config.get("texts", [])
     if not text_list:
@@ -181,7 +187,7 @@ def _handle_text_only(
     display_width: Optional[int],
     line_spacing: int,
     borders: bool,
-):
+) -> None:
     texts, colors, anchors, grid_config = _extract_text_and_colors(loader)
     if borders:
         grid_config["draw_borders"] = True
@@ -203,7 +209,7 @@ def _handle_ascii_art(
     display_width: Optional[int],
     simple_ascii: bool,
     borders: bool,
-):
+) -> None:
     _prepare_grid_with_borders(loader, borders)
     if output:
         img = loader.render(output_path=output)
@@ -225,7 +231,7 @@ def _handle_display(
     output: Optional[str],
     resize: Optional[tuple[Optional[int], Optional[int]]],
     borders: bool,
-):
+) -> None:
     import os
     import tempfile
 
@@ -243,15 +249,15 @@ def _handle_display(
         image_path = temp_path
 
     if RICH_AVAILABLE:
-        console = Console()  # type: ignore
-        pixels = Pixels.from_image_path(image_path, resize=resize)  # type: ignore
+        console = Console()
+        pixels = Pixels.from_image_path(image_path, resize=resize)  # type: ignore[arg-type]
         console.print(pixels)
 
     if temp_path:
         os.unlink(temp_path)
 
 
-def _prepare_grid_with_borders(loader: ConfigLoader, borders: bool):
+def _prepare_grid_with_borders(loader: ConfigLoader, borders: bool) -> Any:
     if not borders:
         return None
     grid = loader.create_grid()
@@ -312,7 +318,7 @@ def render_from_config(
         bool,
         typer.Option("--borders", "-b", help="Draw grid borders around cells"),
     ] = False,
-):
+) -> None:
     try:
         loader = ConfigLoader(config)
 

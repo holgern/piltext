@@ -4,7 +4,7 @@ This module provides the ImageDrawer class, which combines image handling,
 font management, and text rendering into a unified interface.
 """
 
-from typing import cast
+from typing import Any, Optional
 
 from PIL import Image, ImageDraw
 
@@ -47,12 +47,14 @@ class ImageDrawer:
     >>> drawer.show()
     """
 
-    def __init__(self, width, height, font_manager=None):
+    def __init__(
+        self, width: int, height: int, font_manager: Optional[FontManager] = None
+    ) -> None:
         self.image_handler = ImageHandler(width, height)
         self.font_manager = font_manager or FontManager()
         self.draw = ImageDraw.Draw(self.image_handler.image)
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Reinitialize the image to a blank state.
 
         Clears the current image and creates a fresh drawing context. Useful for
@@ -61,7 +63,7 @@ class ImageDrawer:
         self.image_handler.initialize()
         self.draw = ImageDraw.Draw(self.image_handler.image)
 
-    def change_size(self, width, height):
+    def change_size(self, width: int, height: int) -> None:
         """Change the dimensions of the image and reinitialize.
 
         Resizes the image to new dimensions and creates a fresh drawing context.
@@ -79,15 +81,15 @@ class ImageDrawer:
 
     def draw_text(
         self,
-        text,
-        start,
-        end=None,
-        font_name=None,
-        font_size=None,
-        font_variation=None,
-        measure_only=False,
-        **kwargs,
-    ):
+        text: str,
+        start: tuple[int, int],
+        end: Optional[tuple[int, int]] = None,
+        font_name: Optional[str] = None,
+        font_size: Optional[int] = None,
+        font_variation: Optional[str] = None,
+        measure_only: bool = False,
+        **kwargs: Any,
+    ) -> tuple[int, int, int]:
         """Draw text on the image with optional automatic scaling.
 
         Renders text at the specified position. If an end position is provided,
@@ -141,7 +143,9 @@ class ImageDrawer:
         # Return width, height, and font size for further usage
         return w, h, font.size
 
-    def finalize(self, mirror=False, orientation=0, inverted=False):
+    def finalize(
+        self, mirror: bool = False, orientation: int = 0, inverted: bool = False
+    ) -> None:
         """Apply final transformations to the image.
 
         Applies mirror, rotation, and color inversion transformations to the
@@ -168,9 +172,9 @@ class ImageDrawer:
         PIL.Image.Image
             The current image with all applied drawing operations.
         """
-        return cast(Image.Image, self.image_handler.image)
+        return self.image_handler.image
 
-    def show(self, title=None):
+    def show(self, title: Optional[str] = None) -> None:
         """Display the image in the default image viewer.
 
         Opens the image in the system's default image viewing application.
@@ -182,7 +186,12 @@ class ImageDrawer:
         """
         self.image_handler.show(title=title)
 
-    def paste(self, im, box=None, mask=None):
+    def paste(
+        self,
+        im: Image.Image,
+        box: Optional[tuple[int, int]] = None,
+        mask: Optional[Image.Image] = None,
+    ) -> None:
         """Paste another image onto the current image.
 
         Composites another image onto this image at the specified position.

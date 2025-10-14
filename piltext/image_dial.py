@@ -175,7 +175,7 @@ class ImageDial:
         # Return the final image
         return drawer.get_image()
 
-    def _draw_dial(self, drawer: ImageDrawer):
+    def _draw_dial(self, drawer: ImageDrawer) -> None:
         """
         Draw the dial components on the image.
 
@@ -268,7 +268,7 @@ class ImageDial:
         radius: int,
         start_angle: int,
         end_angle: int,
-    ):
+    ) -> None:
         """
         Draw tick marks and labels around the dial.
 
@@ -357,7 +357,7 @@ class ImageDial:
 
     def _draw_needle(
         self, drawer: ImageDrawer, cx: int, cy: int, radius: int, angle: float
-    ):
+    ) -> None:
         """
         Draw a needle pointing to the current percentage value.
 

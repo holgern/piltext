@@ -196,7 +196,7 @@ class ImageSquares:
         # Return the final image
         return drawer.get_image()
 
-    def _draw_squares(self, drawer: ImageDrawer):
+    def _draw_squares(self, drawer: ImageDrawer) -> None:
         """
         Draw the grid of squares on the image.
 

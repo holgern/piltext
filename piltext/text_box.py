@@ -4,6 +4,8 @@ This module provides the TextBox class for managing individual text elements,
 including automatic font size fitting and text wrapping.
 """
 
+from typing import Any, Optional
+
 from PIL import ImageDraw
 
 from .font_manager import FontManager
@@ -40,7 +42,7 @@ class TextBox:
     >>> text_box.draw_text(draw, (10, 10), font, fill="black")
     """
 
-    def __init__(self, text, font_manager: FontManager):
+    def __init__(self, text: str, font_manager: FontManager) -> None:
         self.text = text
         self.font_manager = font_manager
 
@@ -49,10 +51,10 @@ class TextBox:
         draw: ImageDraw.ImageDraw,
         max_width: int,
         max_height: int,
-        font_name=None,
-        font_variation=None,
+        font_name: Optional[str] = None,
+        font_variation: Optional[str] = None,
         start_font_size: int = 1,
-    ):
+    ) -> Any:
         """Find the largest font size that fits within given dimensions.
 
         Incrementally tests font sizes to find the maximum size where the text
@@ -96,7 +98,9 @@ class TextBox:
                 font_name, font_size, variation_name=font_variation
             )
 
-    def draw_text(self, draw: ImageDraw.ImageDraw, xy, font, **kwargs):
+    def draw_text(
+        self, draw: ImageDraw.ImageDraw, xy: tuple[int, int], font: Any, **kwargs: Any
+    ) -> None:
         """Draw the text on an image.
 
         Renders the text at the specified position using the provided font.
@@ -115,7 +119,9 @@ class TextBox:
         """
         draw.text(xy, self.text, font=font, **kwargs)
 
-    def get_wrapped_text_lines(self, draw, text, font, max_width):
+    def get_wrapped_text_lines(
+        self, draw: ImageDraw.ImageDraw, text: str, font: Any, max_width: int
+    ) -> list[str]:
         """Wrap text into multiple lines to fit within a maximum width.
 
         Splits text by words and creates lines that fit within the specified
