@@ -10,6 +10,7 @@ import yaml
 from PIL import ImageDraw
 
 from .font_manager import FontManager
+from .image_dial import ImageDial
 from .image_drawer import ImageDrawer
 from .image_squares import ImageSquares
 from .text_grid import TextGrid
@@ -44,6 +45,7 @@ class ConfigLoader:
     - image: Image dimensions, mode, background, and transformations
     - grid: Grid layout, margins, merges, and text content
     - squares: Square grid visualization for percentage representation
+    - dial: Circular gauge/dial visualization for percentage display
     """
 
     def __init__(self, config_path: str) -> None:
@@ -237,12 +239,74 @@ class ConfigLoader:
 
         return squares
 
+    def create_dial(
+        self, font_manager: Optional[FontManager] = None
+    ) -> Optional[ImageDial]:
+        """Create an ImageDial from the configuration.
+
+        Reads the 'dial' section of the configuration and creates an ImageDial
+        instance for circular gauge-style percentage visualization.
+
+        Parameters
+        ----------
+        font_manager : FontManager, optional
+            FontManager to use. If None, creates a new one from the configuration.
+
+        Returns
+        -------
+        ImageDial or None
+            Configured ImageDial instance, or None if no dial configuration exists.
+        """
+        dial_config = self.config.get("dial")
+        if not dial_config:
+            return None
+
+        if font_manager is None:
+            font_manager = self.create_font_manager()
+
+        percentage = dial_config.get("percentage", 0.0)
+        size = dial_config.get("size", 200)
+        radius = dial_config.get("radius")
+        bg_color = dial_config.get("bg_color", "white")
+        fg_color = dial_config.get("fg_color", "#4CAF50")
+        track_color = dial_config.get("track_color", "#e0e0e0")
+        thickness = dial_config.get("thickness", 20)
+        font_name = dial_config.get("font_name")
+        font_size = dial_config.get("font_size")
+        font_variation = dial_config.get("font_variation")
+        show_needle = dial_config.get("show_needle", True)
+        show_ticks = dial_config.get("show_ticks", True)
+        show_value = dial_config.get("show_value", True)
+        start_angle = dial_config.get("start_angle", -135)
+        end_angle = dial_config.get("end_angle", 135)
+
+        dial = ImageDial(
+            percentage=percentage,
+            font_manager=font_manager,
+            size=size,
+            radius=radius,
+            bg_color=bg_color,
+            fg_color=fg_color,
+            track_color=track_color,
+            thickness=thickness,
+            font_name=font_name,
+            font_size=font_size,
+            font_variation=font_variation,
+            show_needle=show_needle,
+            show_ticks=show_ticks,
+            show_value=show_value,
+            start_angle=start_angle,
+            end_angle=end_angle,
+        )
+
+        return dial
+
     def render(self, output_path: Optional[str] = None) -> Any:
         """Render the complete image from the configuration.
 
-        Creates all configured objects (FontManager, ImageDrawer, TextGrid, or
-        ImageSquares), renders the content, applies transformations, and optionally
-        saves the result to a file.
+        Creates all configured objects (FontManager, ImageDrawer, TextGrid,
+        ImageSquares, or ImageDial), renders the content, applies transformations,
+        and optionally saves the result to a file.
 
         Parameters
         ----------
@@ -257,9 +321,16 @@ class ConfigLoader:
 
         Notes
         -----
-        Priority: squares > grid > basic image
+        Priority: dial > squares > grid > basic image
         """
         font_manager = self.create_font_manager()
+
+        dial = self.create_dial(font_manager)
+        if dial:
+            img = dial.render()
+            if output_path:
+                img.save(output_path)
+            return img
 
         squares = self.create_squares(font_manager)
         if squares:
