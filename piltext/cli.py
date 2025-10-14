@@ -273,6 +273,16 @@ def render_from_config(
         Optional[str],
         typer.Option("--output", "-o", help="Output image file path (PNG)"),
     ] = None,
+    width: Annotated[
+        Optional[int],
+        typer.Option("--width", "-w", help="Image width in pixels (overrides config)"),
+    ] = None,
+    height: Annotated[
+        Optional[int],
+        typer.Option(
+            "--height", "-h", help="Image height in pixels (overrides config)"
+        ),
+    ] = None,
     display: Annotated[
         bool,
         typer.Option(
@@ -321,6 +331,14 @@ def render_from_config(
 ) -> None:
     try:
         loader = ConfigLoader(config)
+
+        if width is not None or height is not None:
+            if "image" not in loader.config:
+                loader.config["image"] = {}
+            if width is not None:
+                loader.config["image"]["width"] = width
+            if height is not None:
+                loader.config["image"]["height"] = height
 
         if display and not RICH_AVAILABLE:
             typer.echo(

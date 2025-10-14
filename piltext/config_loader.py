@@ -11,6 +11,7 @@ from PIL import ImageDraw
 
 from .font_manager import FontManager
 from .image_drawer import ImageDrawer
+from .image_squares import ImageSquares
 from .text_grid import TextGrid
 
 
@@ -42,6 +43,7 @@ class ConfigLoader:
     - fonts: Font directories, default font, and downloads
     - image: Image dimensions, mode, background, and transformations
     - grid: Grid layout, margins, merges, and text content
+    - squares: Square grid visualization for percentage representation
     """
 
     def __init__(self, config_path: str) -> None:
@@ -178,12 +180,69 @@ class ConfigLoader:
 
         return grid
 
+    def create_squares(
+        self, font_manager: Optional[FontManager] = None
+    ) -> Optional[ImageSquares]:
+        """Create an ImageSquares from the configuration.
+
+        Reads the 'squares' section of the configuration and creates an ImageSquares
+        instance for waffle chart-style percentage visualization.
+
+        Parameters
+        ----------
+        font_manager : FontManager, optional
+            FontManager to use. If None, creates a new one from the configuration.
+
+        Returns
+        -------
+        ImageSquares or None
+            Configured ImageSquares instance, or None if no squares configuration
+            exists.
+        """
+        squares_config = self.config.get("squares")
+        if not squares_config:
+            return None
+
+        if font_manager is None:
+            font_manager = self.create_font_manager()
+
+        percentage = squares_config.get("percentage", 0.0)
+        max_squares = squares_config.get("max_squares", 100)
+        size = squares_config.get("size", 200)
+        bg_color = squares_config.get("bg_color", "white")
+        fg_color = squares_config.get("fg_color", "#4CAF50")
+        empty_color = squares_config.get("empty_color", "#e0e0e0")
+        gap = squares_config.get("gap", 2)
+        rows = squares_config.get("rows")
+        columns = squares_config.get("columns")
+        border_width = squares_config.get("border_width", 1)
+        border_color = squares_config.get("border_color", "#cccccc")
+        show_partial = squares_config.get("show_partial", True)
+
+        squares = ImageSquares(
+            percentage=percentage,
+            font_manager=font_manager,
+            max_squares=max_squares,
+            size=size,
+            bg_color=bg_color,
+            fg_color=fg_color,
+            empty_color=empty_color,
+            gap=gap,
+            rows=rows,
+            columns=columns,
+            border_width=border_width,
+            border_color=border_color,
+            show_partial=show_partial,
+        )
+
+        return squares
+
     def render(self, output_path: Optional[str] = None) -> Any:
         """Render the complete image from the configuration.
 
-        Creates all configured objects (FontManager, ImageDrawer, TextGrid),
-        renders the text content, applies transformations, and optionally saves
-        the result to a file.
+        Creates all configured objects (FontManager, ImageDrawer, TextGrid, or
+        ImageSquares), renders the content, applies transformations, and optionally
+        saves the result to a file.
 
         Parameters
         ----------
@@ -198,15 +257,17 @@ class ConfigLoader:
 
         Notes
         -----
-        The rendering process follows these steps:
-        1. Create FontManager and download fonts
-        2. Create ImageDrawer with configured dimensions
-        3. Create TextGrid if configured
-        4. Render all text from the grid configuration
-        5. Apply transformations (mirror, rotation, inversion)
-        6. Save to file if output_path is provided
+        Priority: squares > grid > basic image
         """
         font_manager = self.create_font_manager()
+
+        squares = self.create_squares(font_manager)
+        if squares:
+            img = squares.render()
+            if output_path:
+                img.save(output_path)
+            return img
+
         image_drawer = self.create_image_drawer(font_manager)
 
         grid = self.create_grid(image_drawer, font_manager)
