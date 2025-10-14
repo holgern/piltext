@@ -352,7 +352,23 @@ class ConfigLoader:
                         text_item["start"] = tuple(text_item["start"])
                     if "end" in text_item and isinstance(text_item["end"], list):
                         text_item["end"] = tuple(text_item["end"])
-                grid.set_text_list(text_list)
+
+                    if "dial" in text_item:
+                        dial_spec = text_item.pop("dial")
+                        start = text_item.pop("start")
+                        end = text_item.pop("end", None)
+                        anchor = text_item.pop("anchor", "mm")
+                        grid.set_dial(start, end=end, anchor=anchor, **dial_spec)
+                    elif "squares" in text_item:
+                        squares_spec = text_item.pop("squares")
+                        start = text_item.pop("start")
+                        end = text_item.pop("end", None)
+                        anchor = text_item.pop("anchor", "mm")
+                        grid.set_squares(start, end=end, anchor=anchor, **squares_spec)
+                    elif "text" in text_item:
+                        start = text_item.pop("start")
+                        text_str = text_item.pop("text")
+                        grid.set_text(start, text_str, **text_item)
 
         image_config = self.config.get("image", {})
         mirror = image_config.get("mirror", False)

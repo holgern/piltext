@@ -591,7 +591,7 @@ class TextGrid:
             The bottom-right coordinate of a merged cell range.
             If None, determined from merged cells.
         anchor : str, optional
-            The image anchor position (e.g., 'lt', 'rs'). Default is 'lt'.
+            The image anchor position (e.g., 'lt', 'mm', 'rs'). Default is 'lt'.
         **kwargs
             Additional keyword arguments for image pasting.
 
@@ -604,11 +604,137 @@ class TextGrid:
         - The image position is determined based on the anchor.
         """
         start_pixel, end_pixel = self.get_grid(start, end=end, convert_to_pixel=True)
-        if anchor in ["rs"]:
+        if anchor == "mm":
+            cell_center_x = (start_pixel[0] + end_pixel[0]) // 2
+            cell_center_y = (start_pixel[1] + end_pixel[1]) // 2
+            box = (
+                cell_center_x - image.width // 2,
+                cell_center_y - image.height // 2,
+            )
+        elif anchor == "rs":
             box = (end_pixel[0] - image.width, end_pixel[1] - image.height)
         else:
             box = (start_pixel[0], start_pixel[1])
         self.image_drawer.paste(image, box=box, **kwargs)
+
+    def set_dial(
+        self,
+        start: Union[tuple[int, int], int],
+        percentage: float,
+        end: Optional[tuple[int, int]] = None,
+        anchor: str = "mm",
+        **kwargs: Any,
+    ) -> None:
+        """
+        Place a dial visualization within a grid cell or merged cell range.
+
+        Parameters
+        ----------
+        start : tuple of int or int
+            If a tuple, represents (row, col) in the grid.
+            If an integer, refers to a merged cell index.
+        percentage : float
+            Value between 0 and 1 representing the dial fill percentage.
+        end : tuple of int, optional
+            The bottom-right coordinate of a merged cell range.
+            If None, determined from merged cells.
+        anchor : str, optional
+            The dial anchor position (e.g., 'lt', 'mm', 'rs'). Default is 'mm'.
+        **kwargs
+            Additional keyword arguments passed to ImageDial:
+            - size : int, optional - Dial diameter (auto-calculated if not provided)
+            - arc_start : float, optional - Starting angle in degrees (default 0)
+            - arc_end : float, optional - Ending angle in degrees (default 360)
+            - background_color : str, optional
+            - filled_color : str, optional
+            - outline_color : str, optional
+            - outline_width : int, optional
+            And other ImageDial parameters.
+
+        Examples
+        --------
+        Place a dial in center cell showing 75% completion:
+
+        >>> grid.set_dial((1, 1), 0.75, filled_color='green')
+
+        Place a half-circle dial in top-left cell:
+
+        >>> grid.set_dial((0, 0), 0.5, arc_start=180, arc_end=360)
+        """
+        from piltext.image_dial import ImageDial
+
+        (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
+
+        if "size" not in kwargs:
+            kwargs["size"] = min(width, height)
+
+        dial = ImageDial(
+            percentage=percentage, font_manager=self.image_drawer.font_manager, **kwargs
+        )
+        dial_image = dial.render()
+
+        self.paste_image(start, dial_image, end=end, anchor=anchor)
+
+    def set_squares(
+        self,
+        start: Union[tuple[int, int], int],
+        percentage: float,
+        end: Optional[tuple[int, int]] = None,
+        anchor: str = "mm",
+        **kwargs: Any,
+    ) -> None:
+        """
+        Place a squares visualization within a grid cell or merged cell range.
+
+        Parameters
+        ----------
+        start : tuple of int or int
+            If a tuple, represents (row, col) in the grid.
+            If an integer, refers to a merged cell index.
+        percentage : float
+            Value between 0 and 1 representing the fill percentage.
+        end : tuple of int, optional
+            The bottom-right coordinate of a merged cell range.
+            If None, determined from merged cells.
+        anchor : str, optional
+            The squares anchor position (e.g., 'lt', 'mm', 'rs'). Default is 'mm'.
+        **kwargs
+            Additional keyword arguments passed to ImageSquares:
+            - rows : int, optional - Number of rows (default 10)
+            - columns : int, optional - Number of columns (default 10)
+            - size : int, optional - Image size (auto-calculated if not provided)
+            - max_squares : int, optional - Total squares (default 100)
+            - background_color : str, optional
+            - filled_color : str, optional
+            - outline_color : str, optional
+            - outline_width : int, optional
+            And other ImageSquares parameters.
+
+        Examples
+        --------
+        Place a squares visualization showing 60% completion:
+
+        >>> grid.set_squares((0, 1), 0.60, rows=5, columns=20)
+
+        Place squares with custom colors:
+
+        >>> grid.set_squares((2, 0), 0.85, fg_color='blue', border_color='navy')
+        """
+        from piltext.image_squares import ImageSquares
+
+        (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
+
+        if "size" not in kwargs:
+            kwargs["size"] = min(width, height)
+
+        squares = ImageSquares(
+            percentage=percentage,
+            font_manager=self.image_drawer.font_manager,
+            **kwargs,
+        )
+        squares_image = squares.render()
+
+        self.paste_image(start, squares_image, end=end, anchor=anchor)
 
     def get_merged_cells(
         self,
