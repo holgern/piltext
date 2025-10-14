@@ -26,6 +26,18 @@ class ImageDrawer:
         Width of the image in pixels.
     height : int
         Height of the image in pixels.
+    mode : str, default="RGB"
+        PIL image mode. Common modes:
+        - "RGB": 24-bit true color (supports colors)
+        - "RGBA": 24-bit true color with alpha channel
+        - "L": 8-bit grayscale (black and white)
+        - "1": 1-bit binary (black and white only)
+    background : Any, default="white"
+        Background color of the image. Can be:
+        - Color name (e.g., "white", "black", "red")
+        - Hex color code (e.g., "#FFFFFF", "#000000")
+        - RGB tuple for RGB/RGBA modes (e.g., (255, 255, 255))
+        - Integer value for grayscale mode (0-255)
     font_manager : FontManager, optional
         FontManager instance to use for font operations. If None, a default
         FontManager is created.
@@ -45,12 +57,22 @@ class ImageDrawer:
     >>> drawer.draw_text("Hello World", (100, 100), font_size=24)
     >>> drawer.finalize()
     >>> drawer.show()
+
+    >>> drawer = ImageDrawer(800, 600, mode="L", background=255)
+    >>> drawer.draw_text("Grayscale", (100, 100), font_size=24, fill=0)
+    >>> drawer.finalize()
+    >>> drawer.show()
     """
 
     def __init__(
-        self, width: int, height: int, font_manager: Optional[FontManager] = None
+        self,
+        width: int,
+        height: int,
+        mode: str = "RGB",
+        background: Any = "white",
+        font_manager: Optional[FontManager] = None,
     ) -> None:
-        self.image_handler = ImageHandler(width, height)
+        self.image_handler = ImageHandler(width, height, mode, background)
         self.font_manager = font_manager or FontManager()
         self.draw = ImageDraw.Draw(self.image_handler.image)
 

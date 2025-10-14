@@ -125,8 +125,9 @@ class FontManager:
         for fontdir in self.fontdirs:
             font_path = os.path.join(fontdir, font_name)
             for ext in ["", ".ttf", ".otf"]:
-                if os.path.exists(font_path + ext):
-                    return font_path + ext
+                full_path = font_path + ext
+                if os.path.exists(full_path) and os.path.isfile(full_path):
+                    return full_path
         raise FileNotFoundError(
             f"Font '{font_name}' not found in directories: {self.fontdirs}",
         )
@@ -294,6 +295,12 @@ class FontManager:
             return self._font_cache[cache_key]
 
         font_path = self.get_full_path(font_name)
+
+        # Validate that the path is actually a file to prevent PIL from
+        # walking large directory trees which can cause MemoryError
+        if not os.path.isfile(font_path):
+            raise FileNotFoundError(f"Font path '{font_path}' is not a valid file")
+
         font = ImageFont.truetype(font_path, font_size)
         if variation_name != "none":
             font.set_variation_by_name(variation_name)

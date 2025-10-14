@@ -117,6 +117,37 @@ class TestFontManager(unittest.TestCase):
         self.assertIsInstance(size, tuple)
         self.assertEqual(len(size), 2)
 
+    @patch("os.path.exists")
+    @patch("os.path.isfile")
+    def test_get_full_path_rejects_directory(self, mock_isfile, mock_exists):
+        # Simulate a path that exists but is a directory, not a file
+        mock_exists.return_value = True
+        mock_isfile.return_value = False
+        with self.assertRaises(FileNotFoundError) as context:
+            self.font_manager.get_full_path("SomeDirectory")
+        self.assertIn("not found", str(context.exception))
+
+    @patch("os.path.isfile")
+    @patch("os.path.exists")
+    def test_build_font_validates_file(self, mock_exists, mock_isfile):
+        # First call: get_full_path checks - return True for exists, False for isfile
+        # This will cause get_full_path to fail
+        def isfile_side_effect(path):
+            # Return False to simulate a directory instead of file
+            return False
+
+        def exists_side_effect(path):
+            # Return True to simulate the path exists
+            return path.endswith("Roboto-Bold.ttf") or path.endswith("Roboto-Bold")
+
+        mock_exists.side_effect = exists_side_effect
+        mock_isfile.side_effect = isfile_side_effect
+
+        with self.assertRaises(FileNotFoundError) as context:
+            self.font_manager.build_font("Roboto-Bold", 20)
+        # get_full_path will raise because isfile returns False
+        self.assertIn("not found", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

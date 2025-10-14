@@ -153,6 +153,67 @@ Configuration Options
 - ``rs`` - right-side
 - And more PIL text anchor options
 
+**Embedding Visualizations:**
+
+You can embed dial and squares visualizations directly in grid cells:
+
+.. code-block:: yaml
+
+   grid:
+     rows: 2
+     columns: 3
+     margin_x: 5
+     margin_y: 5
+
+     texts:
+       # Dial visualization
+       - start: [0, 0]
+         dial:
+           percentage: 0.75
+           arc_start: 135
+           arc_end: 45
+           fill_color: "black"
+           empty_color: "white"
+
+       # Text label
+       - start: [0, 1]
+         text: "75%"
+         anchor: "mm"
+
+       # Squares visualization
+       - start: [1, 0]
+         squares:
+           percentage: 0.60
+           fill_color: "black"
+           empty_color: "white"
+
+The ``dial`` and ``squares`` parameters are the same as the standalone dial/squares sections.
+Visualizations auto-size to fit the cell dimensions.
+
+**Dial and Squares Sections:**
+
+Create standalone dial or squares visualizations:
+
+.. code-block:: yaml
+
+   # Dial visualization
+   dial:
+     percentage: 0.75              # Fill percentage (0.0-1.0)
+     size: 250                     # Diameter in pixels
+     arc_start: 135                # Start angle in degrees
+     arc_end: 45                   # End angle in degrees
+     line_width: 20                # Arc thickness in pixels
+     fill_color: "black"           # Filled portion color
+     empty_color: "white"          # Empty portion color
+
+   # Squares visualization
+   squares:
+     percentage: 0.60              # Fill percentage (0.0-1.0)
+     squares_x: 10                 # Number of squares horizontally
+     squares_y: 10                 # Number of squares vertically
+     fill_color: "black"           # Filled squares color
+     empty_color: "white"          # Empty squares color
+
 CLI Commands
 ------------
 
