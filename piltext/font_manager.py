@@ -6,6 +6,7 @@ directory management, and Google Fonts integration.
 
 import logging
 import os
+from functools import lru_cache
 from typing import Any, Optional, Union
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, unquote
@@ -69,7 +70,37 @@ class FontManager:
         self.fontdirs = [os.path.realpath(fontdir) for fontdir in fontdirs]
         self.default_font_name = default_font_name
         self.default_font_size = default_font_size
-        self._font_cache: dict[tuple[Optional[str], int, str], Any] = {}
+
+        @lru_cache(maxsize=128)
+        def _cached_load_font(
+            font_path: str, font_size: int, variation_name: str
+        ) -> Any:
+            font = ImageFont.truetype(font_path, font_size)
+            if variation_name != "none":
+                font.set_variation_by_name(variation_name)
+            return font
+
+        self._cached_load_font = _cached_load_font
+        self._cache_lookup: dict[
+            tuple[Optional[str], int, str], tuple[str, int, str]
+        ] = {}
+
+    @property
+    def _font_cache(self) -> dict[tuple[Optional[str], int, str], Any]:
+        """Access the font cache for backward compatibility with tests.
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the LRU cache.
+        """
+        result = {}
+        for key, cache_key in self._cache_lookup.items():
+            try:
+                result[key] = self._cached_load_font(*cache_key)
+            except Exception:
+                pass
+        return result
 
     def get_user_font_dir(self) -> str:
         """Get the platform-specific user font directory.
@@ -255,6 +286,49 @@ class FontManager:
         font = self.build_font(font_name=font_name)
         return font.get_variation_names()  # type: ignore[no-any-return]
 
+    def validate_font_file(self, font_path: str) -> dict[str, Any]:
+        """Validate a font file and return diagnostic information.
+
+        Checks if a font file exists, is readable, and provides diagnostic
+        information useful for troubleshooting font loading issues.
+
+        Parameters
+        ----------
+        font_path : str
+            Full path to the font file to validate.
+
+        Returns
+        -------
+        dict
+            Dictionary containing validation results with keys:
+            - 'exists': bool - Whether the file exists
+            - 'is_file': bool - Whether the path points to a file (not directory)
+            - 'readable': bool - Whether the file has read permissions
+            - 'size': int - File size in bytes (0 if file doesn't exist)
+            - 'path': str - Absolute path to the file
+            - 'valid': bool - Overall validity (exists, is_file, readable, size > 0)
+
+        Examples
+        --------
+        >>> fm = FontManager()
+        >>> info = fm.validate_font_file("/path/to/font.ttf")
+        >>> if not info['valid']:
+        ...     print(f"Font validation failed: {info}")
+        """
+        info: dict[str, Any] = {
+            "exists": os.path.exists(font_path),
+            "is_file": os.path.isfile(font_path),
+            "readable": os.access(font_path, os.R_OK)
+            if os.path.exists(font_path)
+            else False,
+            "size": os.path.getsize(font_path) if os.path.exists(font_path) else 0,
+            "path": os.path.abspath(font_path),
+        }
+        info["valid"] = (
+            info["exists"] and info["is_file"] and info["readable"] and info["size"] > 0
+        )
+        return info
+
     def build_font(
         self,
         font_name: Optional[str] = None,
@@ -284,15 +358,15 @@ class FontManager:
         ------
         FileNotFoundError
             If the font file is not found in any configured directory.
+        OSError
+            If the font file exists but cannot be loaded (corrupted, invalid format,
+            or unsupported font type). PIL supports TrueType (.ttf) and OpenType (.otf).
         """
         font_size = font_size or self.default_font_size
         font_name = font_name or self.default_font_name
         if font_name is None:
             raise ValueError("No font name specified and no default font available")
         variation_name = variation_name or "none"
-        cache_key = (font_name, font_size, variation_name)
-        if cache_key in self._font_cache:
-            return self._font_cache[cache_key]
 
         font_path = self.get_full_path(font_name)
 
@@ -301,10 +375,40 @@ class FontManager:
         if not os.path.isfile(font_path):
             raise FileNotFoundError(f"Font path '{font_path}' is not a valid file")
 
-        font = ImageFont.truetype(font_path, font_size)
-        if variation_name != "none":
-            font.set_variation_by_name(variation_name)
-        self._font_cache[cache_key] = font
+        # Get file information for diagnostic purposes
+        file_size = os.path.getsize(font_path)
+        file_readable = os.access(font_path, os.R_OK)
+
+        try:
+            font = self._cached_load_font(font_path, font_size, variation_name)
+            self._cache_lookup[(font_name, font_size, variation_name)] = (
+                font_path,
+                font_size,
+                variation_name,
+            )
+        except OSError as e:
+            # PIL raises OSError for various font loading issues
+            error_msg = str(e).lower()
+            if (
+                "unknown file format" in error_msg
+                or "cannot open resource" in error_msg
+            ):
+                diagnostic_info = (
+                    f"File size: {file_size} bytes, "
+                    f"Readable: {file_readable}, "
+                    f"Path: {font_path}"
+                )
+                raise OSError(
+                    f"Failed to load font '{font_name}' from '{font_path}'. "
+                    f"The file may be corrupted, not a valid font file, "
+                    f"or an unsupported format. "
+                    f"Supported formats: TrueType (.ttf), OpenType (.otf). "
+                    f"{diagnostic_info}. "
+                    f"Original error: {e}"
+                ) from e
+            # Re-raise other OSErrors as-is
+            raise
+
         return font
 
     def add_font_directory(self, fontdir: str) -> None:

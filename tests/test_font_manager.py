@@ -148,6 +148,79 @@ class TestFontManager(unittest.TestCase):
         # get_full_path will raise because isfile returns False
         self.assertIn("not found", str(context.exception))
 
+    @patch("os.access")
+    @patch("os.path.getsize")
+    @patch("PIL.ImageFont.truetype")
+    @patch("os.path.isfile")
+    @patch("os.path.exists")
+    def test_build_font_handles_invalid_format(
+        self, mock_exists, mock_isfile, mock_truetype, mock_getsize, mock_access
+    ):
+        # Simulate a file that exists but has invalid format
+        mock_exists.side_effect = lambda path: path.endswith("BadFont.ttf")
+        mock_isfile.side_effect = lambda path: path.endswith("BadFont.ttf")
+        mock_getsize.return_value = 1024  # 1KB file
+        mock_access.return_value = True  # Readable
+        mock_truetype.side_effect = OSError("unknown file format")
+
+        with self.assertRaises(OSError) as context:
+            self.font_manager.build_font("BadFont", 20)
+        # Should provide helpful error message
+        self.assertIn("Failed to load font", str(context.exception))
+        self.assertIn("corrupted", str(context.exception))
+        self.assertIn("TrueType", str(context.exception))
+
+    def test_validate_font_file_valid(self):
+        # Test with a real valid font file
+        font_path = os.path.join(self.fontdirs[0], "Roboto-Bold.ttf")
+        info = self.font_manager.validate_font_file(font_path)
+        self.assertTrue(info["valid"])
+        self.assertTrue(info["exists"])
+        self.assertTrue(info["is_file"])
+        self.assertTrue(info["readable"])
+        self.assertGreater(info["size"], 0)
+        self.assertEqual(info["path"], os.path.abspath(font_path))
+
+    @patch("os.path.exists")
+    @patch("os.path.isfile")
+    @patch("os.access")
+    @patch("os.path.getsize")
+    def test_validate_font_file_nonexistent(
+        self, mock_getsize, mock_access, mock_isfile, mock_exists
+    ):
+        # Test with a non-existent file
+        mock_exists.return_value = False
+        mock_isfile.return_value = False
+        mock_access.return_value = False
+        mock_getsize.return_value = 0
+
+        info = self.font_manager.validate_font_file("/fake/path/NonExistent.ttf")
+        self.assertFalse(info["valid"])
+        self.assertFalse(info["exists"])
+        self.assertFalse(info["is_file"])
+        self.assertFalse(info["readable"])
+        self.assertEqual(info["size"], 0)
+
+    @patch("os.path.exists")
+    @patch("os.path.isfile")
+    @patch("os.access")
+    @patch("os.path.getsize")
+    def test_validate_font_file_directory(
+        self, mock_getsize, mock_access, mock_isfile, mock_exists
+    ):
+        # Test with a directory instead of a file
+        mock_exists.return_value = True
+        mock_isfile.return_value = False
+        mock_access.return_value = True
+        mock_getsize.return_value = 4096
+
+        info = self.font_manager.validate_font_file("/some/directory")
+        self.assertFalse(info["valid"])
+        self.assertTrue(info["exists"])
+        self.assertFalse(info["is_file"])
+        self.assertTrue(info["readable"])
+        self.assertEqual(info["size"], 4096)
+
 
 if __name__ == "__main__":
     unittest.main()
