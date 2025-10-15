@@ -7,7 +7,6 @@ configurations from YAML files and creating corresponding piltext objects.
 from typing import Any, Optional
 
 import yaml
-from PIL import ImageDraw
 
 from .font_manager import FontManager
 from .image_dial import ImageDial
@@ -120,11 +119,7 @@ class ConfigLoader:
         if font_manager is None:
             font_manager = self.create_font_manager()
 
-        image_drawer = ImageDrawer(width, height, font_manager)
-        image_drawer.image_handler.mode = mode
-        image_drawer.image_handler.background = background
-        image_drawer.image_handler.initialize()
-        image_drawer.draw = ImageDraw.Draw(image_drawer.image_handler.image)
+        image_drawer = ImageDrawer(width, height, mode, background, font_manager)
 
         return image_drawer
 

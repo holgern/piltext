@@ -368,6 +368,15 @@ class FontManager:
             raise ValueError("No font name specified and no default font available")
         variation_name = variation_name or "none"
 
+        if not isinstance(font_size, int):
+            font_size = int(font_size)
+
+        if font_size <= 0:
+            raise ValueError(f"Font size must be positive, got {font_size}")
+
+        if font_size > 10000:
+            raise ValueError(f"Font size too large (max 10000), got {font_size}")
+
         font_path = self.get_full_path(font_name)
 
         # Validate that the path is actually a file to prevent PIL from
@@ -389,7 +398,13 @@ class FontManager:
         except OSError as e:
             # PIL raises OSError for various font loading issues
             error_msg = str(e).lower()
-            if (
+            if "invalid pixel size" in error_msg:
+                raise ValueError(
+                    f"Invalid font size: {font_size}. "
+                    f"Font size must be a positive integer. "
+                    f"Original error: {e}"
+                ) from e
+            elif (
                 "unknown file format" in error_msg
                 or "cannot open resource" in error_msg
             ):
