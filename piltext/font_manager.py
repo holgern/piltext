@@ -368,8 +368,7 @@ class FontManager:
             raise ValueError("No font name specified and no default font available")
         variation_name = variation_name or "none"
 
-        if not isinstance(font_size, int):
-            font_size = int(font_size)
+        font_size = int(font_size)
 
         if font_size <= 0:
             raise ValueError(f"Font size must be positive, got {font_size}")

@@ -176,7 +176,7 @@ class ImageDrawer:
                 if h_anchor == "l":
                     x = x1
                 elif h_anchor == "m":
-                    x = (x1 + x2) / 2
+                    x = int((x1 + x2) / 2)
                 elif h_anchor == "r":
                     x = x2
                 else:
@@ -185,14 +185,14 @@ class ImageDrawer:
                 if v_anchor == "t":
                     y = y1
                 elif v_anchor == "m":
-                    y = (y1 + y2) / 2
+                    y = int((y1 + y2) / 2)
                 elif v_anchor in ("b", "s"):
                     y = y2
                 else:
                     y = y1
 
                 # Use the calculated anchor position for drawing
-                draw_position = (int(x), int(y))
+                draw_position = (x, y)
             else:
                 # Ensure start is int tuple
                 draw_position = (int(start[0]), int(start[1]))

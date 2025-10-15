@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OS: ubuntu-latest
-      PYTHON: '3.9'
+      PYTHON: '3.10'
     steps:
     - uses: actions/checkout@master
     - name: Setup Python
@@ -14,7 +14,7 @@ jobs:
         python-version: 3.9
     - name: 'generate report'
       run: |
-        pip install coverage click
+        pip install coverage click pytest
         pip install -e .
         coverage run -m unittest
     - name: Upload coverage to Codecov

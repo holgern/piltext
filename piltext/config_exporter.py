@@ -339,7 +339,7 @@ class ConfigExporter:
         class CustomDumper(yaml.SafeDumper):
             pass
 
-        def represent_list(dumper, data):
+        def represent_list(dumper: yaml.SafeDumper, data: list) -> yaml.Node:
             if isinstance(data, list) and len(data) == 2:
                 if all(isinstance(item, list) and len(item) == 2 for item in data):
                     return dumper.represent_sequence(
