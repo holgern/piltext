@@ -335,7 +335,7 @@ class TextGrid:
             anchor = "lt"
 
         # Horizontal position
-        h_anchor = anchor[1]  # second char: l=left, m=middle, r=right
+        h_anchor = anchor[0]  # first char: l=left, m=middle, r=right
         if h_anchor == "l":
             x = x1
         elif h_anchor == "m":
@@ -346,7 +346,7 @@ class TextGrid:
             x = x1
 
         # Vertical position
-        v_anchor = anchor[0]  # first char: t=top, m=middle, b=bottom, s=baseline
+        v_anchor = anchor[1]  # second char: t=top, m=middle, b=bottom, s=baseline
         if v_anchor == "t":
             y = y1
         elif v_anchor == "m":
@@ -446,17 +446,36 @@ class TextGrid:
         }
 
         (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
-        position = self._calculate_anchor_position(x1, y1, x2, y2, anchor)
 
-        return self.image_drawer.draw_text(
-            text,
-            position,
-            end=(x2, y2),
-            font_name=font_name,
-            font_variation=font_variation,
-            anchor=anchor,
-            **kwargs,
-        )
+        # When auto-fitting (no explicit font_size), pass cell top-left
+        # (x1, y1) as start and bottom-right (x2, y2) as end.
+        # The image_drawer will handle anchor positioning.
+        # When font_size is specified, calculate anchor position manually.
+        if "font_size" in item:
+            # Font size specified - no auto-fit
+            position = self._calculate_anchor_position(x1, y1, x2, y2, anchor)
+            return self.image_drawer.draw_text(
+                text,
+                position,
+                end=None,
+                font_name=font_name,
+                font_variation=font_variation,
+                font_size=item["font_size"],
+                anchor=anchor,
+                **kwargs,
+            )
+        else:
+            # Auto-fit mode: pass cell bounds to image_drawer
+            # image_drawer will calculate anchor position after fitting
+            return self.image_drawer.draw_text(
+                text,
+                (x1, y1),  # Top-left for fit box calculation
+                end=(x2, y2),  # Bottom-right for fit box calculation
+                font_name=font_name,
+                font_variation=font_variation,
+                anchor=anchor,
+                **kwargs,
+            )
 
     def get_dimensions(
         self,

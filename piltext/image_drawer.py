@@ -123,7 +123,9 @@ class ImageDrawer:
         text : str
             Text string to render.
         start : tuple of (int, int)
-            Top-left corner position (x1, y1) for the text.
+            Position for the text. When auto-fitting (end is provided), this should
+            be the top-left corner (x1, y1) of the bounding box. When not auto-fitting,
+            this is the anchor point for the text.
         end : tuple of (int, int), optional
             Bottom-right corner position (x2, y2). If provided, text is scaled
             to fit within the bounding box defined by start and end.
@@ -137,30 +139,75 @@ class ImageDrawer:
             If True, only calculates text size without drawing.
         **kwargs : dict
             Additional keyword arguments passed to PIL's text drawing method
-            (e.g., fill, stroke_width, stroke_fill).
+            (e.g., fill, stroke_width, stroke_fill, anchor).
 
         Returns
         -------
         tuple of (int, int, int)
             Width, height, and font size of the rendered text.
+
+        Notes
+        -----
+        When auto-fitting with an anchor: If 'anchor' is in kwargs and end is provided,
+        the fit box is calculated from start to end, but the text is drawn at the
+        anchor position within that box. This requires recalculating the draw position
+        based on the anchor after fitting.
         """
         text_box = TextBox(text, self.font_manager)
 
         if end is not None:
+            # Auto-fit mode: start should be top-left (x1, y1),
+            # end should be bottom-right (x2, y2)
             max_w, max_h = abs(end[0] - start[0]), abs(end[1] - start[1])
             font = text_box.fit_text(
                 self.draw, max_w, max_h, font_name, font_variation=font_variation
             )
+
+            # If an anchor is specified, calculate the correct draw position
+            # within the fit box based on the anchor
+            anchor = kwargs.get("anchor", "lt")
+            if anchor and anchor != "lt":
+                x1, y1 = start
+                x2, y2 = end
+                h_anchor = anchor[0]  # horizontal: l, m, r
+                v_anchor = anchor[1] if len(anchor) > 1 else "t"  # vertical: t, m, b, s
+
+                # Calculate anchor position within the cell
+                if h_anchor == "l":
+                    x = x1
+                elif h_anchor == "m":
+                    x = (x1 + x2) / 2
+                elif h_anchor == "r":
+                    x = x2
+                else:
+                    x = x1
+
+                if v_anchor == "t":
+                    y = y1
+                elif v_anchor == "m":
+                    y = (y1 + y2) / 2
+                elif v_anchor in ("b", "s"):
+                    y = y2
+                else:
+                    y = y1
+
+                # Use the calculated anchor position for drawing
+                draw_position = (int(x), int(y))
+            else:
+                # Ensure start is int tuple
+                draw_position = (int(start[0]), int(start[1]))
         else:
             font = self.font_manager.build_font(
                 font_name, font_size=font_size, variation_name=font_variation
             )
+            # Ensure start is int tuple
+            draw_position = (int(start[0]), int(start[1]))
 
         # Calculate the text size before drawing
         w, h = self.font_manager.calculate_text_size(self.draw, text, font)
         if not measure_only:
             # Draw the text on the image
-            text_box.draw_text(self.draw, start, font, **kwargs)
+            text_box.draw_text(self.draw, draw_position, font, **kwargs)
 
         # Return width, height, and font size for further usage
         return w, h, font.size
