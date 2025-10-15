@@ -266,6 +266,58 @@ def _prepare_grid_with_borders(loader: ConfigLoader, borders: bool) -> Any:
     return grid
 
 
+def _handle_analyze(loader: ConfigLoader) -> None:
+    grid_config = loader.config.get("grid", {})
+    if not grid_config:
+        typer.echo("No grid configuration found", err=True)
+        raise typer.Exit(1)
+
+    rows = grid_config.get("rows", 0)
+    columns = grid_config.get("columns", 0)
+    merges = grid_config.get("merge", [])
+    texts = grid_config.get("texts", [])
+
+    typer.echo("=== Grid Analysis ===\n", color=True)
+    typer.echo(f"Grid Size: {rows} rows × {columns} columns\n")
+
+    if merges:
+        typer.echo(f"Merge Regions ({len(merges)}):")
+        for i, merge in enumerate(merges):
+            start, end = merge
+            typer.echo(
+                f"  [{i}] [{start[0]}, {start[1]}] to [{end[0]}, {end[1]}] "
+                f"(rows {start[0]}-{end[0]}, cols {start[1]}-{end[1]})"
+            )
+        typer.echo()
+
+    grid = loader.create_grid()
+    if grid and texts:
+        typer.echo(f"Text Items ({len(texts)}):")
+        for i, text_item in enumerate(texts):
+            start = text_item.get("start", [0, 0])
+            text = text_item.get("text", "")
+            font = text_item.get("font_name", "default")
+            anchor = text_item.get("anchor", "lt")
+
+            cell_key = (start[0], start[1])
+            if cell_key in grid.merged_cells:
+                merge_info = grid.merged_cells[cell_key]
+                merge_start, merge_end = merge_info
+                merge_str = (
+                    f"→ Merge [{merge_start[0]}, {merge_start[1]}] to "
+                    f"[{merge_end[0]}, {merge_end[1]}]"
+                )
+            else:
+                merge_str = "→ No merge"
+
+            typer.echo(
+                f"  [{i}] Cell [{start[0]}, {start[1]}] {merge_str}\n"
+                f"      Text: '{text}'\n"
+                f"      Font: {font}, Anchor: {anchor}"
+            )
+        typer.echo()
+
+
 @app.command("render")
 def render_from_config(
     config: Annotated[str, typer.Argument(help="Path to YAML configuration file")],
@@ -328,6 +380,13 @@ def render_from_config(
         bool,
         typer.Option("--borders", "-b", help="Draw grid borders around cells"),
     ] = False,
+    analyze: Annotated[
+        bool,
+        typer.Option(
+            "--analyze",
+            help="Display detailed grid analysis (merges, cells, text items)",
+        ),
+    ] = False,
 ) -> None:
     try:
         loader = ConfigLoader(config)
@@ -352,7 +411,9 @@ def render_from_config(
         if display_width is not None or display_height is not None:
             resize = (display_width, display_height)
 
-        if text_only:
+        if analyze:
+            _handle_analyze(loader)
+        elif text_only:
             _handle_text_only(loader, display_width, line_spacing, borders)
         elif ascii_art or simple_ascii:
             _handle_ascii_art(loader, output, display_width, simple_ascii, borders)

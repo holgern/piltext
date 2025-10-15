@@ -4,7 +4,7 @@ import unittest
 
 import yaml
 
-from piltext import ConfigExporter, ConfigLoader, FontManager, ImageDrawer, TextGrid
+from piltext import ConfigExporter, FontManager, ImageDrawer, TextGrid
 
 
 class TestConfigExporter(unittest.TestCase):
