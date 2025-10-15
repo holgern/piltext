@@ -17,21 +17,21 @@ grid:
   columns: 2
   margin_x: 5
   margin_y: 5
-  
+
   texts:
     - start: [0, 0]
       text: "Hello"
       anchor: "mm"
-    
+
     - start: [0, 1]
       text: "World"
       anchor: "mm"
-    
+
     - start: [1, 0]
       text: "Piltext"
       anchor: "mm"
       fill: 128
-    
+
     - start: [1, 1]
       text: "CLI"
       anchor: "mm"

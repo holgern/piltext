@@ -18,7 +18,7 @@ grid:
   columns: 3
   margin_x: 20
   margin_y: 20
-  
+
   texts:
     - start: [0, 0]
       dial:
@@ -32,13 +32,13 @@ grid:
         show_needle: true
         start_angle: -135
         end_angle: 135
-    
+
     - start: [0, 1]
       text: "Performance\nMetrics"
       anchor: "mm"
       font_size: 32
       fill: "#333333"
-    
+
     - start: [0, 2]
       squares:
         percentage: 0.60
@@ -49,13 +49,13 @@ grid:
         empty_color: "#e0e0e0"
         gap: 3
         border_width: 0
-    
+
     - start: [1, 0]
       text: "75% Complete"
       anchor: "mm"
       font_size: 28
       fill: "#4CAF50"
-    
+
     - start: [1, 1]
       dial:
         percentage: 0.50
@@ -69,7 +69,7 @@ grid:
         start_angle: 180
         end_angle: 360
       anchor: "mm"
-    
+
     - start: [1, 2]
       text: "60% Capacity"
       anchor: "mm"

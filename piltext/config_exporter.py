@@ -335,10 +335,39 @@ class ConfigExporter:
         output_path : str
             Path to save the YAML configuration file.
         """
+
+        class CustomDumper(yaml.SafeDumper):
+            pass
+
+        def represent_list(dumper, data):
+            if isinstance(data, list) and len(data) == 2:
+                if all(isinstance(item, list) and len(item) == 2 for item in data):
+                    return dumper.represent_sequence(
+                        "tag:yaml.org,2002:seq", data, flow_style=True
+                    )
+                elif all(isinstance(item, int) for item in data):
+                    return dumper.represent_sequence(
+                        "tag:yaml.org,2002:seq", data, flow_style=True
+                    )
+            return dumper.represent_sequence(
+                "tag:yaml.org,2002:seq", data, flow_style=False
+            )
+
+        CustomDumper.add_representer(list, represent_list)
+
         with open(output_path, "w") as f:
             yaml.dump(
-                self.config, f, default_flow_style=False, sort_keys=False, indent=2
+                self.config,
+                f,
+                Dumper=CustomDumper,
+                default_flow_style=False,
+                sort_keys=False,
+                indent=2,
             )
+
+    def _process_config_for_export(self, config: dict[str, Any]) -> dict[str, Any]:
+        """Process configuration to use flow style for merge arrays."""
+        return config
 
     def export_grid(
         self,

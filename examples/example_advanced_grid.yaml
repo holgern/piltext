@@ -4,7 +4,7 @@
 fonts:
   default_size: 16
   default_name: "Roboto[wdth,wght]"
-  
+
   download:
     - part1: "ofl"
       part2: "roboto"
@@ -24,24 +24,24 @@ grid:
   columns: 4
   margin_x: 10
   margin_y: 10
-  
+
   # Merge cells for header and footer sections
   merge:
     # Header row spanning all columns
     - [[0, 0], [0, 3]]
-    
+
     # Left sidebar spanning rows 1-4
     - [[1, 0], [4, 0]]
-    
+
     # Main content area (merged 2x2)
     - [[1, 1], [2, 2]]
-    
+
     # Right sidebar top
     - [[1, 3], [2, 3]]
-    
+
     # Footer spanning all columns
     - [[5, 0], [5, 3]]
-  
+
   texts:
     # Header - merged cell index 0
     - start: 0
@@ -50,7 +50,7 @@ grid:
       font_variation: "Bold"
       anchor: "mm"
       fill: "#1976D2"
-    
+
     # Left Sidebar - Menu - merged cell index 1
     - start: 1
       text: "MENU\n━━━━━\n\n📈 Sales\n💰 Revenue\n👥 Users\n📦 Products\n⚙️ Settings"
@@ -58,15 +58,17 @@ grid:
       font_variation: "Regular"
       anchor: "mm"
       fill: "#424242"
-    
+
     # Main Content Area - merged cell index 2
     - start: 2
-      text: "Q4 2024 Results\n\nRevenue: $2.5M\nGrowth: +32%\n\nOutstanding performance\nacross all metrics!"
+      text:
+        "Q4 2024 Results\n\nRevenue: $2.5M\nGrowth: +32%\n\nOutstanding
+        performance\nacross all metrics!"
       font_size: 18
       font_variation: "Regular"
       anchor: "mm"
       fill: "#212121"
-    
+
     # Right Sidebar Top - Status - merged cell index 3
     - start: 3
       text: "STATUS\n\n✅ On Track\n⚠️ Review\n❌ Delayed"
@@ -74,7 +76,7 @@ grid:
       font_variation: "Light"
       anchor: "mm"
       fill: "#616161"
-    
+
     # Statistics row (individual cells)
     - start: [3, 1]
       text: "SALES\n\n1,250\nunits"
@@ -82,21 +84,21 @@ grid:
       font_variation: "Medium"
       anchor: "mm"
       fill: "#4CAF50"
-    
+
     - start: [3, 2]
       text: "CUSTOMERS\n\n342\nactive"
       font_size: 14
       font_variation: "Medium"
       anchor: "mm"
       fill: "#2196F3"
-    
+
     - start: [3, 3]
       text: "CONVERSION\n\n8.5%\nrate"
       font_size: 14
       font_variation: "Medium"
       anchor: "mm"
       fill: "#FF9800"
-    
+
     # Metrics row
     - start: [4, 1]
       text: "Net Profit\n$750K"
@@ -104,21 +106,21 @@ grid:
       font_variation: "Regular"
       anchor: "mm"
       fill: "#388E3C"
-    
+
     - start: [4, 2]
       text: "ROI\n45%"
       font_size: 12
       font_variation: "Regular"
       anchor: "mm"
       fill: "#1565C0"
-    
+
     - start: [4, 3]
       text: "Margin\n30%"
       font_size: 12
       font_variation: "Regular"
       anchor: "mm"
       fill: "#E65100"
-    
+
     # Footer - merged cell index 4
     - start: 4
       text: "Generated with piltext • Data as of Dec 2024 • Confidential"
