@@ -170,11 +170,19 @@ def _get_cell_position(
     """
     Get start and end positions for a text item in the grid.
     """
-    if merge_cells and i < len(merge_cells):
-        return merge_cells[i][0], merge_cells[i][1]
-    elif i < len(text_items) and "start" in text_items[i]:
-        start_pos = text_items[i]["start"]
+    if i < len(text_items) and "start" in text_items[i]:
+        start_pos = tuple(text_items[i]["start"])
         end_pos = text_items[i].get("end", start_pos)
+        if isinstance(end_pos, list):
+            end_pos = tuple(end_pos)
+
+        if merge_cells:
+            for merge in merge_cells:
+                merge_start = tuple(merge[0])
+                merge_end = tuple(merge[1])
+                if merge_start == start_pos:
+                    return merge_start, merge_end
+
         return start_pos, end_pos
     return None
 
