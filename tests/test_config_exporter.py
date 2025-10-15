@@ -46,6 +46,18 @@ class TestConfigExporter(unittest.TestCase):
         self.assertEqual(config["image"]["mode"], "L")
         self.assertEqual(config["image"]["background"], "black")
 
+    def test_add_image_with_inverted_mirror_orientation(self):
+        exporter = ConfigExporter()
+        exporter.add_image(
+            width=800, height=600, inverted=True, mirror=True, orientation=90
+        )
+
+        config = exporter.get_config()
+        self.assertIn("image", config)
+        self.assertEqual(config["image"]["inverted"], True)
+        self.assertEqual(config["image"]["mirror"], True)
+        self.assertEqual(config["image"]["orientation"], 90)
+
     def test_add_grid(self):
         exporter = ConfigExporter()
         exporter.add_grid(rows=4, columns=3, margin_x=5, margin_y=10)
@@ -98,6 +110,15 @@ class TestConfigExporter(unittest.TestCase):
         self.assertEqual(config["squares"]["bg_color"], "blue")
         self.assertEqual(config["squares"]["fg_color"], "red")
 
+    def test_add_squares_with_rows_columns(self):
+        exporter = ConfigExporter()
+        exporter.add_squares(percentage=0.5, rows=10, columns=10)
+
+        config = exporter.get_config()
+        self.assertIn("squares", config)
+        self.assertEqual(config["squares"]["rows"], 10)
+        self.assertEqual(config["squares"]["columns"], 10)
+
     def test_add_dial(self):
         exporter = ConfigExporter()
         exporter.add_dial(
@@ -116,6 +137,18 @@ class TestConfigExporter(unittest.TestCase):
         self.assertEqual(config["dial"]["radius"], 100)
         self.assertEqual(config["dial"]["fg_color"], "green")
         self.assertEqual(config["dial"]["show_needle"], False)
+
+    def test_add_dial_with_font_options(self):
+        exporter = ConfigExporter()
+        exporter.add_dial(
+            percentage=0.6, font_name="Arial", font_size=24, font_variation="Bold"
+        )
+
+        config = exporter.get_config()
+        self.assertIn("dial", config)
+        self.assertEqual(config["dial"]["font_name"], "Arial")
+        self.assertEqual(config["dial"]["font_size"], 24)
+        self.assertEqual(config["dial"]["font_variation"], "Bold")
 
     def test_export_to_file(self):
         exporter = ConfigExporter()

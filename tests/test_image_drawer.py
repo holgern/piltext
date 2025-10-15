@@ -109,6 +109,43 @@ class TestImageDrawer(unittest.TestCase):
         self.assertEqual(drawer.image_handler.width, 200)
         self.assertEqual(drawer.image_handler.height, 200)
 
+    def test_draw_text_with_anchor_middle(self):
+        w, h, font_size = self.image_drawer.draw_text(
+            "Test", (10, 10), end=(100, 100), font_name="Roboto-Bold", anchor="mm"
+        )
+        self.assertGreater(w, 0)
+        self.assertGreater(h, 0)
+
+    def test_draw_text_with_anchor_right_bottom(self):
+        w, h, font_size = self.image_drawer.draw_text(
+            "Test", (10, 10), end=(100, 100), font_name="Roboto-Bold", anchor="rb"
+        )
+        self.assertGreater(w, 0)
+        self.assertGreater(h, 0)
+
+    def test_draw_text_no_end_with_font_size(self):
+        w, h, font_size = self.image_drawer.draw_text(
+            "Test", (10, 10), font_name="Roboto-Bold", font_size=20
+        )
+        self.assertGreater(w, 0)
+        self.assertGreater(h, 0)
+        self.assertEqual(font_size, 20)
+
+    def test_finalize_with_transformations(self):
+        self.image_drawer.draw_text(
+            "Test", (10, 10), font_name="Roboto-Bold", font_size=20
+        )
+        self.image_drawer.finalize(mirror=True, orientation=90, inverted=True)
+        img = self.image_drawer.get_image()
+        self.assertIsNotNone(img)
+
+    def test_measure_only(self):
+        w, h, font_size = self.image_drawer.draw_text(
+            "Test", (10, 10), font_name="Roboto-Bold", font_size=20, measure_only=True
+        )
+        self.assertGreater(w, 0)
+        self.assertGreater(h, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
