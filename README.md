@@ -71,31 +71,39 @@ image.finalize(inverted=False)
 display(image.get_image())
 ```
 
-Anchor can be used:
+Anchor can be used to position text within cells. When no `font_size` is specified, text automatically scales to fit the cell:
 
-```
+```python
 image = ImageDrawer(480, 280, f)
+
+# Auto-fit with anchor (text scales to fit the bounding box)
 xy = (5, 3)
 w, h, font_size = image.draw_text(
     "Long Text 1", xy, end=(480, (280 - 15) / 3), anchor="lt"
 )
-xy = (5, int(h * 0.85))
-w, h, font_size = image.draw_text(
-    "Long Text 2", xy, end=(480, xy[1] * 1.5), anchor="lt"
-)
+
+# Fixed font size with anchor (no auto-fit)
 xy = (5, xy[1] + h)
 w, h, font_size = image.draw_text(
     "Long Text 3", xy, font_size=font_size, font_variation="Thin", anchor="lt"
 )
-xy = (5, xy[1] + h)
-w, h, font_size = image.draw_text("Long Text 3", xy, font_size=font_size, anchor="lt")
+
+# Bottom-right anchor with auto-fit
 w, h, font_size = image.draw_text(
-    "Long Text 4", (480 - 5, 280 - 5), end=(5, 5), anchor="rs"
+    "Long Text 4", (480 - 5, 280 - 5), end=(5, 5), anchor="rb"
 )
 
 image.finalize(inverted=False)
 display(image.get_image())
 ```
+
+**Anchor Positioning:**
+
+The anchor parameter uses a two-character code:
+- First character (horizontal): `l` (left), `m` (middle), `r` (right)
+- Second character (vertical): `t` (top), `m` (middle), `b` (bottom), `s` (baseline)
+
+Examples: `lt` (left-top), `mm` (centered), `rb` (right-bottom)
 
 TextGrid
 

@@ -148,10 +148,42 @@ Configuration Options
 
 **Anchor Options:**
 
-- ``lt`` - left-top
-- ``mm`` - middle-middle
-- ``rs`` - right-side
-- And more PIL text anchor options
+The anchor parameter controls text positioning within a cell using a two-character code:
+
+- **First character (horizontal):** ``l`` (left), ``m`` (middle), ``r`` (right)
+- **Second character (vertical):** ``t`` (top), ``m`` (middle), ``b`` (bottom), ``s`` (baseline)
+
+Common anchor values:
+
+- ``lt`` - left-top (default)
+- ``mm`` - middle-middle (centered)
+- ``rb`` - right-bottom
+- ``mt`` - middle-top
+- ``lb`` - left-bottom
+- ``rs`` - right-baseline
+
+**Auto-Fit with Anchors:**
+
+When no ``font_size`` is specified, text automatically scales to fit the cell. The anchor
+determines where the fitted text is positioned:
+
+.. code-block:: yaml
+
+    grid:
+      rows: 2
+      columns: 2
+      merge:
+        - [[0, 0], [1, 1]]  # Large merged cell
+      texts:
+        - start: [0, 0]
+          text: "AUTO-FIT"
+          anchor: "mm"      # Text fills cell, centered
+          fill: 255
+
+        - start: [0, 1]
+          text: "12345"
+          anchor: "rb"      # Text fills cell, positioned at bottom-right
+          font_size: 20     # Fixed size (no auto-fit)
 
 **Embedding Visualizations:**
 
