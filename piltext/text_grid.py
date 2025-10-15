@@ -35,6 +35,7 @@ class TextGrid:
         image_drawer: Any,
         margin_x: int = 0,
         margin_y: int = 0,
+        auto_render: bool = True,
     ) -> None:
         """
         Initialize a text grid layout.
@@ -53,6 +54,9 @@ class TextGrid:
         margin_y : int, optional
             Vertical margin (top & bottom) inside each cell in pixels.
             Default is 0.
+        auto_render : bool, optional
+            If True, render operations immediately. If False, store operations
+            for later rendering with render() method. Default is True.
 
         Attributes
         ----------
@@ -70,6 +74,10 @@ class TextGrid:
             Drawable height inside each cell after margins.
         merged_cells : dict
             Dictionary mapping cell coordinates to merged regions.
+        content_items : list
+            List of all content operations (text, images, dials, squares).
+        auto_render : bool
+            Whether to render operations immediately or store them.
 
         Examples
         --------
@@ -92,6 +100,10 @@ class TextGrid:
         # Store margins
         self.margin_x = margin_x
         self.margin_y = margin_y
+
+        # Content tracking
+        self.auto_render = auto_render
+        self.content_items: list[dict[str, Any]] = []
 
         # Calculate the width and height of each grid cell
         self.cell_width = (self.width) / cols
@@ -393,9 +405,47 @@ class TextGrid:
         """
         if start is None:
             raise ValueError("start cannot be None in set_text")
-        (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
 
-        # Calculate the actual position based on anchor
+        text_item: dict[str, Any] = {"type": "text", "start": start, "text": text}
+        if end is not None:
+            text_item["end"] = end
+        if font_name is not None:
+            text_item["font_name"] = font_name
+        if font_variation is not None:
+            text_item["font_variation"] = font_variation
+        if anchor != "lt":
+            text_item["anchor"] = anchor
+        for key, value in kwargs.items():
+            text_item[key] = value
+        self.content_items.append(text_item)
+
+        if self.auto_render:
+            return self._render_text(text_item)
+
+    def _render_text(self, item: dict[str, Any]) -> Any:
+        """Render a text item to the image."""
+        start = item["start"]
+        text = item["text"]
+        end = item.get("end")
+        font_name = item.get("font_name")
+        font_variation = item.get("font_variation")
+        anchor = item.get("anchor", "lt")
+        kwargs = {
+            k: v
+            for k, v in item.items()
+            if k
+            not in [
+                "type",
+                "start",
+                "text",
+                "end",
+                "font_name",
+                "font_variation",
+                "anchor",
+            ]
+        }
+
+        (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
         position = self._calculate_anchor_position(x1, y1, x2, y2, anchor)
 
         return self.image_drawer.draw_text(
@@ -569,6 +619,47 @@ class TextGrid:
             text_str = text.pop("text")
             self.set_text(start, text_str, **text)
 
+    def render(self) -> None:
+        """
+        Render all stored content items to the image.
+
+        This method processes all stored operations (text, images, dials, squares)
+        and renders them to the image. Useful when auto_render is False.
+
+        Examples
+        --------
+        Create a grid with manual rendering:
+
+        >>> grid = TextGrid(2, 2, drawer, auto_render=False)
+        >>> grid.set_text((0, 0), "Hello")
+        >>> grid.set_text((0, 1), "World")
+        >>> grid.render()  # Render all at once
+        """
+        for item in self.content_items:
+            item_type = item.get("type")
+            if item_type == "text":
+                self._render_text(item)
+            elif item_type == "image":
+                self._render_image(item)
+            elif item_type == "dial":
+                self._render_dial(item)
+            elif item_type == "squares":
+                self._render_squares(item)
+
+    def clear_content(self) -> None:
+        """
+        Clear all stored content items.
+
+        This removes all stored operations but does not clear the rendered image.
+        Useful for resetting the content list before adding new content.
+
+        Examples
+        --------
+        >>> grid.set_text((0, 0), "Hello")
+        >>> grid.clear_content()  # Clears the stored operation
+        """
+        self.content_items.clear()
+
     def paste_image(
         self,
         start: Union[tuple[int, int], int],
@@ -603,6 +694,30 @@ class TextGrid:
           merged cell coordinates.
         - The image position is determined based on the anchor.
         """
+        image_item: dict[str, Any] = {"type": "image", "start": start, "image": image}
+        if end is not None:
+            image_item["end"] = end
+        if anchor != "lt":
+            image_item["anchor"] = anchor
+        for key, value in kwargs.items():
+            image_item[key] = value
+        self.content_items.append(image_item)
+
+        if self.auto_render:
+            self._render_image(image_item)
+
+    def _render_image(self, item: dict[str, Any]) -> None:
+        """Render an image item to the image."""
+        start = item["start"]
+        image = item["image"]
+        end = item.get("end")
+        anchor = item.get("anchor", "lt")
+        kwargs = {
+            k: v
+            for k, v in item.items()
+            if k not in ["type", "start", "image", "end", "anchor"]
+        }
+
         start_pixel, end_pixel = self.get_grid(start, end=end, convert_to_pixel=True)
         if anchor == "mm":
             cell_center_x = (start_pixel[0] + end_pixel[0]) // 2
@@ -661,7 +776,35 @@ class TextGrid:
 
         >>> grid.set_dial((0, 0), 0.5, arc_start=180, arc_end=360)
         """
+        dial_item: dict[str, Any] = {
+            "type": "dial",
+            "start": start,
+            "percentage": percentage,
+        }
+        if end is not None:
+            dial_item["end"] = end
+        if anchor != "mm":
+            dial_item["anchor"] = anchor
+        for key, value in kwargs.items():
+            dial_item[key] = value
+        self.content_items.append(dial_item)
+
+        if self.auto_render:
+            self._render_dial(dial_item)
+
+    def _render_dial(self, item: dict[str, Any]) -> None:
+        """Render a dial item to the image."""
         from piltext.image_dial import ImageDial
+
+        start = item["start"]
+        percentage = item["percentage"]
+        end = item.get("end")
+        anchor = item.get("anchor", "mm")
+        kwargs = {
+            k: v
+            for k, v in item.items()
+            if k not in ["type", "start", "percentage", "end", "anchor"]
+        }
 
         (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
 
@@ -673,7 +816,15 @@ class TextGrid:
         )
         dial_image = dial.render()
 
-        self.paste_image(start, dial_image, end=end, anchor=anchor)
+        image_item = {
+            "type": "image",
+            "start": start,
+            "image": dial_image,
+            "anchor": anchor,
+        }
+        if end is not None:
+            image_item["end"] = end
+        self._render_image(image_item)
 
     def set_squares(
         self,
@@ -720,7 +871,35 @@ class TextGrid:
 
         >>> grid.set_squares((2, 0), 0.85, fg_color='blue', border_color='navy')
         """
+        squares_item: dict[str, Any] = {
+            "type": "squares",
+            "start": start,
+            "percentage": percentage,
+        }
+        if end is not None:
+            squares_item["end"] = end
+        if anchor != "mm":
+            squares_item["anchor"] = anchor
+        for key, value in kwargs.items():
+            squares_item[key] = value
+        self.content_items.append(squares_item)
+
+        if self.auto_render:
+            self._render_squares(squares_item)
+
+    def _render_squares(self, item: dict[str, Any]) -> None:
+        """Render a squares item to the image."""
         from piltext.image_squares import ImageSquares
+
+        start = item["start"]
+        percentage = item["percentage"]
+        end = item.get("end")
+        anchor = item.get("anchor", "mm")
+        kwargs = {
+            k: v
+            for k, v in item.items()
+            if k not in ["type", "start", "percentage", "end", "anchor"]
+        }
 
         (x1, y1), (x2, y2), width, height = self._get_cell_dimensions(start, end=end)
 
@@ -734,7 +913,15 @@ class TextGrid:
         )
         squares_image = squares.render()
 
-        self.paste_image(start, squares_image, end=end, anchor=anchor)
+        image_item = {
+            "type": "image",
+            "start": start,
+            "image": squares_image,
+            "anchor": anchor,
+        }
+        if end is not None:
+            image_item["end"] = end
+        self._render_image(image_item)
 
     def get_merged_cells(
         self,

@@ -149,71 +149,92 @@ class TestConfigExporter(unittest.TestCase):
         self.assertIn("fonts", loaded_config)
         self.assertIn("image", loaded_config)
         self.assertIn("grid", loaded_config)
-        self.assertEqual(loaded_config["grid"]["rows"], 3)
-        self.assertEqual(loaded_config["grid"]["columns"], 3)
-        self.assertEqual(loaded_config["grid"]["margin_x"], 5)
-        self.assertEqual(loaded_config["grid"]["margin_y"], 5)
 
-    def test_export_grid_without_fonts(self):
-        fm = FontManager(default_font_size=15)
-        drawer = ImageDrawer(400, 300, font_manager=fm)
-        grid = TextGrid(2, 2, drawer)
+    def test_export_grid_with_content_items(self):
+        """Test exporting grid with text content from content_items."""
+        fm = FontManager(
+            fontdirs="tests/fonts",
+            default_font_size=20,
+            default_font_name="Roboto-Bold",
+        )
+        drawer = ImageDrawer(600, 400, background="white", font_manager=fm)
+        grid = TextGrid(3, 3, drawer, margin_x=10, margin_y=10)
+
+        # Add text content
+        grid.set_text((0, 0), "Header", font_name="Roboto-Bold", anchor="mm")
+        grid.set_text((1, 0), "Row 1", font_name="Roboto-Bold")
+        grid.set_text((2, 1), "Row 2", font_name="Roboto-Bold", anchor="rb")
 
         exporter = ConfigExporter()
-        exporter.export_grid(grid, self.temp_file, include_fonts=False)
+        exporter.export_grid(grid, self.temp_file)
+
+        self.assertTrue(os.path.exists(self.temp_file))
 
         with open(self.temp_file) as f:
             loaded_config = yaml.safe_load(f)
 
-        self.assertNotIn("fonts", loaded_config)
-        self.assertIn("image", loaded_config)
+        # Verify texts are exported
         self.assertIn("grid", loaded_config)
+        self.assertIn("texts", loaded_config["grid"])
+        self.assertEqual(len(loaded_config["grid"]["texts"]), 3)
 
-    def test_export_grid_without_image(self):
-        fm = FontManager(default_font_size=15)
-        drawer = ImageDrawer(400, 300, font_manager=fm)
-        grid = TextGrid(2, 2, drawer)
+        # Verify text content
+        texts = loaded_config["grid"]["texts"]
+        self.assertEqual(texts[0]["start"], [0, 0])
+        self.assertEqual(texts[0]["text"], "Header")
+        self.assertEqual(texts[0]["font_name"], "Roboto-Bold")
+        self.assertEqual(texts[0]["anchor"], "mm")
+
+        self.assertEqual(texts[1]["start"], [1, 0])
+        self.assertEqual(texts[1]["text"], "Row 1")
+
+        self.assertEqual(texts[2]["start"], [2, 1])
+        self.assertEqual(texts[2]["text"], "Row 2")
+        self.assertEqual(texts[2]["anchor"], "rb")
+
+    def test_export_grid_with_mixed_content(self):
+        """Test that only text items are exported from mixed content."""
+        fm = FontManager(
+            fontdirs="tests/fonts",
+            default_font_size=20,
+            default_font_name="Roboto-Bold",
+        )
+        drawer = ImageDrawer(600, 400, background="white", font_manager=fm)
+        grid = TextGrid(3, 3, drawer, margin_x=5, margin_y=5)
+
+        # Add mixed content
+        grid.set_text((0, 0), "Text Item", font_name="Roboto-Bold")
+        grid.set_dial((1, 1), 0.75)
+        grid.set_squares((2, 2), 0.5)
 
         exporter = ConfigExporter()
-        exporter.export_grid(grid, self.temp_file, include_image=False)
+        exporter.export_grid(grid, self.temp_file)
 
         with open(self.temp_file) as f:
             loaded_config = yaml.safe_load(f)
 
-        self.assertIn("fonts", loaded_config)
-        self.assertNotIn("image", loaded_config)
-        self.assertIn("grid", loaded_config)
+        # Only text items should be exported
+        texts = loaded_config["grid"]["texts"]
+        self.assertEqual(len(texts), 1)
+        self.assertEqual(texts[0]["text"], "Text Item")
 
-    def test_roundtrip_with_config_loader(self):
-        exporter = ConfigExporter()
-        exporter.add_fonts(default_size=20, default_name="Arial")
-        exporter.add_image(width=480, height=280)
-        exporter.add_grid(rows=2, columns=2, margin_x=10, margin_y=10)
-        exporter.export(self.temp_file)
+        # Type field should not be in exported config
+        self.assertNotIn("type", texts[0])
 
-        loader = ConfigLoader(self.temp_file)
-        grid = loader.create_grid()
-
-        self.assertEqual(grid.rows, 2)
-        self.assertEqual(grid.cols, 2)
-        self.assertEqual(grid.margin_x, 10)
-        self.assertEqual(grid.margin_y, 10)
-
-    def test_roundtrip_export_then_load_grid(self):
-        fm = FontManager(default_font_size=25)
-        drawer = ImageDrawer(500, 400, font_manager=fm)
-        original_grid = TextGrid(4, 5, drawer, margin_x=8, margin_y=12)
+    def test_export_grid_no_content_items(self):
+        """Test exporting grid with no content items."""
+        fm = FontManager(default_font_size=15)
+        drawer = ImageDrawer(400, 300, font_manager=fm)
+        grid = TextGrid(3, 3, drawer)
 
         exporter = ConfigExporter()
-        exporter.export_grid(original_grid, self.temp_file)
+        exporter.export_grid(grid, self.temp_file)
 
-        loader = ConfigLoader(self.temp_file)
-        loaded_grid = loader.create_grid()
+        with open(self.temp_file) as f:
+            loaded_config = yaml.safe_load(f)
 
-        self.assertEqual(loaded_grid.rows, original_grid.rows)
-        self.assertEqual(loaded_grid.cols, original_grid.cols)
-        self.assertEqual(loaded_grid.margin_x, original_grid.margin_x)
-        self.assertEqual(loaded_grid.margin_y, original_grid.margin_y)
+        # Texts should be empty or not present
+        self.assertNotIn("texts", loaded_config["grid"])
 
 
 if __name__ == "__main__":

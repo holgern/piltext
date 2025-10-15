@@ -42,6 +42,10 @@ class MockImageDrawer:
         self.draw.text((start, text, font_name))
         return 0, 0, 0
 
+    def paste(self, image, box=None, **kwargs):
+        # Mock paste method for image pasting
+        pass
+
     def finalize(self, inverted=False):
         pass
 
@@ -166,6 +170,160 @@ class TestGrid(unittest.TestCase):
         self.assertEqual(y1, 55)  # 70 - 15
         self.assertEqual(x2, 380)  # 360 + 20
         self.assertEqual(y2, 225)  # 210 + 15
+
+    def test_auto_render_default(self):
+        """Test that auto_render is True by default."""
+        self.assertTrue(self.grid.auto_render)
+
+    def test_auto_render_stores_content(self):
+        """Test that content is stored when using auto_render=True."""
+        self.grid.set_text((0, 0), "Test")
+        self.assertEqual(len(self.grid.content_items), 1)
+        self.assertEqual(self.grid.content_items[0]["type"], "text")
+        self.assertEqual(self.grid.content_items[0]["text"], "Test")
+        self.assertEqual(self.grid.content_items[0]["start"], (0, 0))
+
+    def test_manual_render_mode(self):
+        """Test that auto_render=False defers rendering."""
+        font_manager = MockFontManager()
+        image_drawer = MockImageDrawer(480, 280, font_manager)
+        image_drawer.draw_text = MagicMock()
+        grid = TextGrid(4, 4, image_drawer, auto_render=False)
+
+        grid.set_text((0, 0), "Test1")
+        grid.set_text((1, 1), "Test2")
+
+        # Should not have called draw_text yet
+        image_drawer.draw_text.assert_not_called()
+
+        # Content should be stored
+        self.assertEqual(len(grid.content_items), 2)
+
+        # Now render
+        grid.render()
+
+        # Should have called draw_text twice
+        self.assertEqual(image_drawer.draw_text.call_count, 2)
+
+    def test_content_items_structure_text(self):
+        """Test that text content items have the correct structure."""
+        self.grid.set_text(
+            (0, 0),
+            "Hello",
+            end=(0, 1),
+            font_name="Arial",
+            font_variation="Bold",
+            anchor="mm",
+        )
+
+        self.assertEqual(len(self.grid.content_items), 1)
+        item = self.grid.content_items[0]
+
+        self.assertEqual(item["type"], "text")
+        self.assertEqual(item["start"], (0, 0))
+        self.assertEqual(item["end"], (0, 1))
+        self.assertEqual(item["text"], "Hello")
+        self.assertEqual(item["font_name"], "Arial")
+        self.assertEqual(item["font_variation"], "Bold")
+        self.assertEqual(item["anchor"], "mm")
+
+    def test_content_items_structure_image(self):
+        """Test that image content items have the correct structure."""
+        test_image = Image.new("RGB", (100, 100), color="red")
+        self.grid.paste_image((1, 1), test_image, anchor="mm")
+
+        self.assertEqual(len(self.grid.content_items), 1)
+        item = self.grid.content_items[0]
+
+        self.assertEqual(item["type"], "image")
+        self.assertEqual(item["start"], (1, 1))
+        self.assertEqual(item["image"], test_image)
+        self.assertEqual(item["anchor"], "mm")
+
+    def test_content_items_structure_dial(self):
+        """Test that dial content items have the correct structure."""
+        self.grid.set_dial((2, 2), 0.75, bg_color="blue", fg_color="red")
+
+        self.assertEqual(len(self.grid.content_items), 1)
+        item = self.grid.content_items[0]
+
+        self.assertEqual(item["type"], "dial")
+        self.assertEqual(item["start"], (2, 2))
+        self.assertEqual(item["percentage"], 0.75)
+        self.assertEqual(item["bg_color"], "blue")
+        self.assertEqual(item["fg_color"], "red")
+
+    def test_content_items_structure_squares(self):
+        """Test that squares content items have the correct structure."""
+        self.grid.set_squares((1, 0), 0.5, bg_color="white", fg_color="black")
+
+        self.assertEqual(len(self.grid.content_items), 1)
+        item = self.grid.content_items[0]
+
+        self.assertEqual(item["type"], "squares")
+        self.assertEqual(item["start"], (1, 0))
+        self.assertEqual(item["percentage"], 0.5)
+        self.assertEqual(item["bg_color"], "white")
+        self.assertEqual(item["fg_color"], "black")
+
+    def test_clear_content(self):
+        """Test that clear_content removes all stored content."""
+        self.grid.set_text((0, 0), "Test1")
+        self.grid.set_text((1, 1), "Test2")
+        test_image = Image.new("RGB", (100, 100), color="red")
+        self.grid.paste_image((2, 2), test_image)
+
+        self.assertEqual(len(self.grid.content_items), 3)
+
+        self.grid.clear_content()
+
+        self.assertEqual(len(self.grid.content_items), 0)
+
+    def test_mixed_content_types(self):
+        """Test storing different types of content together."""
+        self.grid.set_text((0, 0), "Text")
+        test_image = Image.new("RGB", (50, 50), color="blue")
+        self.grid.paste_image((1, 1), test_image)
+        self.grid.set_dial((2, 2), 0.8)
+        self.grid.set_squares((3, 3), 0.6)
+
+        self.assertEqual(len(self.grid.content_items), 4)
+
+        types = [item["type"] for item in self.grid.content_items]
+        self.assertEqual(types, ["text", "image", "dial", "squares"])
+
+    def test_render_multiple_times(self):
+        """Test that render() can be called multiple times."""
+        font_manager = MockFontManager()
+        image_drawer = MockImageDrawer(480, 280, font_manager)
+        image_drawer.draw_text = MagicMock()
+        grid = TextGrid(4, 4, image_drawer, auto_render=False)
+
+        grid.set_text((0, 0), "Test")
+        grid.render()
+        first_call_count = image_drawer.draw_text.call_count
+
+        grid.render()
+        second_call_count = image_drawer.draw_text.call_count
+
+        # Should render the same content again
+        self.assertEqual(second_call_count, first_call_count * 2)
+
+    def test_content_accumulation(self):
+        """Test that content accumulates across multiple operations."""
+        self.grid.set_text((0, 0), "First")
+        self.assertEqual(len(self.grid.content_items), 1)
+
+        self.grid.set_text((1, 1), "Second")
+        self.assertEqual(len(self.grid.content_items), 2)
+
+        self.grid.set_dial((2, 2), 0.5)
+        self.assertEqual(len(self.grid.content_items), 3)
+
+        # Verify order is preserved
+        self.assertEqual(self.grid.content_items[0]["text"], "First")
+        self.assertEqual(self.grid.content_items[1]["text"], "Second")
+        self.assertEqual(self.grid.content_items[2]["percentage"], 0.5)
 
 
 if __name__ == "__main__":

@@ -388,6 +388,11 @@ class ConfigExporter:
             Whether to include font configuration.
         include_image : bool, default=True
             Whether to include image configuration.
+
+        Notes
+        -----
+        Text content is automatically exported from the grid's content_items.
+        Only text items are exported to the grid configuration.
         """
         if include_fonts:
             fm = grid.image_drawer.font_manager
@@ -408,8 +413,24 @@ class ConfigExporter:
             )
 
         merges = []
+        seen_merges = set()
         for _cell_coord, (start, end) in grid.merged_cells.items():
-            merges.append((start, end))
+            merge_key = (start, end)
+            if merge_key not in seen_merges:
+                seen_merges.add(merge_key)
+                merges.append((start, end))
+
+        texts = None
+        if hasattr(grid, "content_items") and grid.content_items:
+            text_items = [
+                item for item in grid.content_items if item.get("type") == "text"
+            ]
+            if text_items:
+                texts = []
+                for item in text_items:
+                    text_config = item.copy()
+                    text_config.pop("type", None)
+                    texts.append(text_config)
 
         self.add_grid(
             rows=grid.rows,
@@ -417,6 +438,7 @@ class ConfigExporter:
             margin_x=grid.margin_x,
             margin_y=grid.margin_y,
             merges=merges if merges else None,
+            texts=texts,
         )
 
         self.export(output_path)
