@@ -71,7 +71,8 @@ image.finalize(inverted=False)
 display(image.get_image())
 ```
 
-Anchor can be used to position text within cells. When no `font_size` is specified, text automatically scales to fit the cell:
+Anchor can be used to position text within cells. When no `font_size` is specified, text
+automatically scales to fit the cell:
 
 ```python
 image = ImageDrawer(480, 280, f)
@@ -100,6 +101,7 @@ display(image.get_image())
 **Anchor Positioning:**
 
 The anchor parameter uses a two-character code:
+
 - First character (horizontal): `l` (left), `m` (middle), `r` (right)
 - Second character (vertical): `t` (top), `m` (middle), `b` (bottom), `s` (baseline)
 
