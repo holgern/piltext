@@ -327,10 +327,13 @@ def _apply_json_array_to_texts(loader: ConfigLoader, json_array: list[Any]) -> N
                 text_item["text"] = str(value)
 
 
-def _read_json_input(loader: ConfigLoader) -> None:
+def _read_json_input(loader: ConfigLoader) -> bool:
+    if sys.stdin.isatty():
+        return False
+
     full_input = sys.stdin.read().strip()
     if not full_input:
-        return
+        return False
 
     buffer = ""
     for line in full_input.split("\n"):
@@ -373,6 +376,8 @@ def _read_json_input(loader: ConfigLoader) -> None:
                 )
         except json.JSONDecodeError as e:
             typer.echo(f"Error parsing JSON: {e}", err=True)
+
+    return True
 
 
 def _handle_analyze(loader: ConfigLoader) -> None:
@@ -496,20 +501,11 @@ def render_from_config(
             help="Display detailed grid analysis (merges, cells, text items)",
         ),
     ] = False,
-    json_input: Annotated[
-        bool,
-        typer.Option(
-            "--json-input",
-            "-j",
-            help="Read JSON lines from stdin to override configuration",
-        ),
-    ] = False,
 ) -> None:
     try:
         loader = ConfigLoader(config)
 
-        if json_input:
-            _read_json_input(loader)
+        _read_json_input(loader)
 
         if width is not None or height is not None:
             if "image" not in loader.config:

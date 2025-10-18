@@ -4,16 +4,16 @@ JSON Data Input Guide
 Overview
 --------
 
-The ``piltext render`` command supports data-driven image generation by reading JSON from stdin. This allows you to create templates in TOML and populate them dynamically with data from JSON.
+The ``piltext render`` command supports data-driven image generation by reading JSON from stdin. JSON input is automatically detected when data is piped to the command. This allows you to create templates in TOML and populate them dynamically with data from JSON.
 
 Usage
 -----
 
 .. code-block:: bash
 
-   piltext render template.toml --json-input --output image.png < data.json
-   echo '{"key": "value"}' | piltext render template.toml --json-input -o image.png
-   echo '["value1", "value2", "value3"]' | piltext render template.toml --json-input -o image.png
+   piltext render template.toml --output image.png < data.json
+   echo '{"key": "value"}' | piltext render template.toml -o image.png
+   echo '["value1", "value2", "value3"]' | piltext render template.toml -o image.png
 
 Three Modes of Operation
 -------------------------
@@ -29,15 +29,15 @@ Pass a JSON array and values are mapped to text items in order:
 
    # For a template with 4 text items
    echo '["Line 1", "Line 2", "Line 3", "Line 4"]' | \
-     piltext render examples/example_simple.toml --json-input -o output.png
+     piltext render examples/example_simple.toml -o output.png
 
    # For metrics with dials/squares (values are percentages 0.0-1.0)
    echo '[0.65, 0.82, 0.44]' | \
-     piltext render template_metrics.toml --json-input -o metrics.png
+     piltext render template_metrics.toml -o metrics.png
 
    # Works with any values (numbers, strings, etc.)
    echo '["CPU", "72%", 42, "Active"]' | \
-     piltext render template.toml --json-input -o output.png
+     piltext render template.toml -o output.png
 
 **How it works:**
 
@@ -102,7 +102,7 @@ Use ``data_key`` in your TOML template to bind JSON values to specific fields:
 
 .. code-block:: bash
 
-   cat data.json | piltext render template.toml --json-input -o output.png
+   cat data.json | piltext render template.toml -o output.png
 
 3. Configuration Override
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,7 +111,7 @@ Override any configuration value directly:
 
 .. code-block:: bash
 
-   echo '{"image": {"width": 800}}' | piltext render config.toml --json-input -o output.png
+   echo '{"image": {"width": 800}}' | piltext render config.toml -o output.png
 
 Quick Comparison
 ----------------
@@ -222,11 +222,11 @@ Example 1: System Metrics Dashboard
 
    # Current metrics
    echo '{"cpu": 0.45, "memory": 0.72, "disk": 0.33}' | \
-     piltext render metrics.toml --json-input -o metrics_now.png
+     piltext render metrics.toml -o metrics_now.png
 
    # Peak metrics
    echo '{"cpu": 0.95, "memory": 0.88, "disk": 0.91}' | \
-     piltext render metrics.toml --json-input -o metrics_peak.png
+     piltext render metrics.toml -o metrics_peak.png
 
 Example 2: Weather Display
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -282,7 +282,7 @@ Example 2: Weather Display
    # From API or data pipeline
    curl https://api.weather.example/data | \
      jq '{"city": .location, "temperature": .temp, "conditions": .weather, "humidity": .humidity_pct, "temp_color": .color}' | \
-     piltext render weather.toml --json-input -o weather.png
+     piltext render weather.toml -o weather.png
 
 Example 3: Multiple JSON Lines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -292,7 +292,7 @@ Process multiple lines sequentially (each line updates the config):
 .. code-block:: bash
 
    printf '{"temperature": "70°F"}\n{"humidity": "50%%"}\n' | \
-     piltext render template.toml --json-input -o output.png
+     piltext render template.toml -o output.png
 
 Example 4: CI/CD Build Status
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -331,11 +331,11 @@ Example 4: CI/CD Build Status
 
    # Success
    echo '{"build_number": "#123", "status": "PASSED", "status_color": "#4CAF50", "status_size": 48}' | \
-     piltext render build_status.toml --json-input -o badge.png
+     piltext render build_status.toml -o badge.png
 
    # Failure
    echo '{"build_number": "#124", "status": "FAILED", "status_color": "#F44336", "status_size": 48}' | \
-     piltext render build_status.toml --json-input -o badge.png
+     piltext render build_status.toml -o badge.png
 
 Use Cases
 ---------
@@ -365,5 +365,5 @@ If JSON parsing fails, an error message is displayed but processing continues:
 
 .. code-block:: bash
 
-   $ echo '{"invalid": json}' | piltext render template.toml --json-input
+   $ echo '{"invalid": json}' | piltext render template.toml
    Error parsing JSON: Expecting value: line 1 column 13 (char 12)
