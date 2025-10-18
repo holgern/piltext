@@ -440,6 +440,7 @@ class TextGrid:
                 "text",
                 "end",
                 "font_name",
+                "font_size",
                 "font_variation",
                 "anchor",
             ]

@@ -50,6 +50,24 @@ When working on the code, please follow these documentation guidelines:
 - Include type hints in function signatures
 - Document parameters, return values, and raised exceptions
 
+### TOML Schema
+
+The project includes a JSON Schema for TOML validation located at
+`schemas/piltext.json`.
+
+When adding new fields or properties to TOML configurations:
+
+1. Update the schema in `schemas/piltext.json`
+2. Add new properties, enums, or definitions as needed
+3. Test with `taplo check examples/*.toml`
+4. Update schema documentation in `schemas/README.md`
+
+The schema provides:
+
+- Validation for field definitions, formatters, and layouts
+- Autocomplete in VS Code (with Even Better TOML extension)
+- Type checking for TOML configuration files
+
 ## Development
 
 ### Running Tests

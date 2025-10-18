@@ -1,7 +1,7 @@
-"""Example: Export piltext configuration to YAML.
+"""Example: Export piltext configuration to TOML.
 
 This example demonstrates how to use ConfigExporter to create piltext
-objects programmatically and export them to a YAML configuration file.
+objects programmatically and export them to a TOML configuration file.
 """
 
 from piltext import ConfigExporter, FontManager, ImageDrawer, TextGrid
@@ -18,9 +18,9 @@ def main():
     grid.set_text((1, 1), "Export", anchor="mm", fill=200)
 
     exporter = ConfigExporter()
-    exporter.export_grid(grid, "exported_config.yaml")
+    exporter.export_grid(grid, "exported_config.toml")
 
-    print("Configuration exported to exported_config.yaml")
+    print("Configuration exported to exported_config.toml")
 
 
 def create_custom_config():
@@ -49,8 +49,8 @@ def create_custom_config():
         ],
     )
 
-    exporter.export("custom_config.yaml")
-    print("Custom configuration exported to custom_config.yaml")
+    exporter.export("custom_config.toml")
+    print("Custom configuration exported to custom_config.toml")
 
 
 def create_dial_config():
@@ -69,8 +69,8 @@ def create_dial_config():
         show_value=True,
     )
 
-    exporter.export("dial_config.yaml")
-    print("Dial configuration exported to dial_config.yaml")
+    exporter.export("dial_config.toml")
+    print("Dial configuration exported to dial_config.toml")
 
 
 def create_squares_config():
@@ -92,8 +92,8 @@ def create_squares_config():
         show_partial=True,
     )
 
-    exporter.export("squares_config.yaml")
-    print("Squares configuration exported to squares_config.yaml")
+    exporter.export("squares_config.toml")
+    print("Squares configuration exported to squares_config.toml")
 
 
 if __name__ == "__main__":

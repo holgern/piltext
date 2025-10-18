@@ -179,13 +179,13 @@ class TestAnchorPosition(unittest.TestCase):
         self.assertEqual(result_rb, (360, 140))
 
     def test_ticker_yaml_scenario(self):
-        """Test the specific scenario from ticker.yaml.
+        """Test the specific scenario from ticker.toml.
 
         This tests the bug that was discovered where text with anchor='rb'
         at cell [13,0] in a merge [[13,0], [19,5]] was not rendering.
         The merge should span from row 13-19, columns 0-5.
         """
-        # Create a grid matching ticker.yaml: 21 rows x 6 columns, 264x176 image
+        # Create a grid matching ticker.toml: 21 rows x 6 columns, 264x176 image
         font_manager = MockFontManager()
         image_drawer = MockImageDrawer(264, 176, font_manager)
         grid = TextGrid(21, 6, image_drawer, margin_x=1, margin_y=1)

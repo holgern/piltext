@@ -1,12 +1,21 @@
-"""YAML configuration loading for piltext image creation.
+"""TOML configuration loading for piltext image creation.
 
 This module provides the ConfigLoader class for loading image, font, and grid
-configurations from YAML files and creating corresponding piltext objects.
+configurations from TOML files and creating corresponding piltext objects.
 """
 
+import sys
 from typing import Any, Optional
 
-import yaml
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    try:
+        import tomli as tomllib
+    except ImportError as e:
+        raise ImportError(
+            "tomli is required for Python < 3.11. Install with: pip install tomli"
+        ) from e
 
 from .font_manager import FontManager
 from .image_dial import ImageDial
@@ -16,30 +25,30 @@ from .text_grid import TextGrid
 
 
 class ConfigLoader:
-    """Loads and processes YAML configuration files for image creation.
+    """Loads and processes TOML configuration files for image creation.
 
-    ConfigLoader reads YAML configuration files and creates configured FontManager,
+    ConfigLoader reads TOML configuration files and creates configured FontManager,
     ImageDrawer, and TextGrid objects. It supports font downloads, grid layouts,
     and image transformations defined in the configuration.
 
     Parameters
     ----------
     config_path : str
-        Path to the YAML configuration file.
+        Path to the TOML configuration file.
 
     Attributes
     ----------
     config : dict
-        Parsed YAML configuration dictionary.
+        Parsed TOML configuration dictionary.
 
     Examples
     --------
-    >>> loader = ConfigLoader("config.yaml")
+    >>> loader = ConfigLoader("config.toml")
     >>> image = loader.render(output_path="output.png")
 
     Notes
     -----
-    The YAML configuration file should contain sections for:
+    The TOML configuration file should contain sections for:
     - fonts: Font directories, default font, and downloads
     - image: Image dimensions, mode, background, and transformations
     - grid: Grid layout, margins, merges, and text content
@@ -48,8 +57,8 @@ class ConfigLoader:
     """
 
     def __init__(self, config_path: str) -> None:
-        with open(config_path) as f:
-            self.config = yaml.safe_load(f)
+        with open(config_path, "rb") as f:
+            self.config = tomllib.load(f)
 
     def create_font_manager(self) -> FontManager:
         """Create a FontManager from the configuration.

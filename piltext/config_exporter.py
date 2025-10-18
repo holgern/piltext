@@ -1,20 +1,25 @@
-"""YAML configuration export for piltext objects.
+"""TOML configuration export for piltext objects.
 
 This module provides the ConfigExporter class for exporting piltext objects
-(TextGrid, ImageDrawer, FontManager, etc.) to YAML configuration files that
+(TextGrid, ImageDrawer, FontManager, etc.) to TOML configuration files that
 can be loaded by ConfigLoader.
 """
 
 from typing import Any, Optional
 
-import yaml
+try:
+    import tomli_w
+except ImportError as e:
+    raise ImportError(
+        "tomli_w is required for TOML export. Install with: pip install tomli_w"
+    ) from e
 
 
 class ConfigExporter:
-    """Exports piltext objects to YAML configuration format.
+    """Exports piltext objects to TOML configuration format.
 
     ConfigExporter allows you to create and configure piltext objects
-    programmatically and then export them to a YAML file that can be loaded
+    programmatically and then export them to a TOML file that can be loaded
     by ConfigLoader.
 
     Examples
@@ -24,7 +29,7 @@ class ConfigExporter:
     >>> drawer = ImageDrawer(480, 280, fm)
     >>> grid = TextGrid(4, 4, drawer, margin_x=2, margin_y=2)
     >>> exporter = ConfigExporter()
-    >>> exporter.export_grid(grid, "config.yaml")
+    >>> exporter.export_grid(grid, "config.toml")
     """
 
     def __init__(self) -> None:
@@ -328,42 +333,15 @@ class ConfigExporter:
         self.config["dial"] = dial_config
 
     def export(self, output_path: str) -> None:
-        """Export the configuration to a YAML file.
+        """Export the configuration to a TOML file.
 
         Parameters
         ----------
         output_path : str
-            Path to save the YAML configuration file.
+            Path to save the TOML configuration file.
         """
-
-        class CustomDumper(yaml.SafeDumper):
-            pass
-
-        def represent_list(dumper: yaml.SafeDumper, data: list) -> yaml.Node:
-            if isinstance(data, list) and len(data) == 2:
-                if all(isinstance(item, list) and len(item) == 2 for item in data):
-                    return dumper.represent_sequence(
-                        "tag:yaml.org,2002:seq", data, flow_style=True
-                    )
-                elif all(isinstance(item, int) for item in data):
-                    return dumper.represent_sequence(
-                        "tag:yaml.org,2002:seq", data, flow_style=True
-                    )
-            return dumper.represent_sequence(
-                "tag:yaml.org,2002:seq", data, flow_style=False
-            )
-
-        CustomDumper.add_representer(list, represent_list)
-
-        with open(output_path, "w") as f:
-            yaml.dump(
-                self.config,
-                f,
-                Dumper=CustomDumper,
-                default_flow_style=False,
-                sort_keys=False,
-                indent=2,
-            )
+        with open(output_path, "wb") as f:
+            tomli_w.dump(self.config, f)
 
     def _process_config_for_export(self, config: dict[str, Any]) -> dict[str, Any]:
         """Process configuration to use flow style for merge arrays."""
@@ -376,14 +354,14 @@ class ConfigExporter:
         include_fonts: bool = True,
         include_image: bool = True,
     ) -> None:
-        """Export a TextGrid object to YAML configuration.
+        """Export a TextGrid object to TOML configuration.
 
         Parameters
         ----------
         grid : TextGrid
             TextGrid object to export.
         output_path : str
-            Path to save the YAML configuration file.
+            Path to save the TOML configuration file.
         include_fonts : bool, default=True
             Whether to include font configuration.
         include_image : bool, default=True

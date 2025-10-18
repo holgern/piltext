@@ -38,40 +38,41 @@ PILText provides tools to create images with text using Pillow (PIL).
    # Save the image
    handler.save("hello_world.png")
 
-YAML Configuration
+TOML Configuration
 ------------------
 
-PILText supports YAML configuration files for easy image generation:
+PILText supports TOML configuration files for easy image generation:
 
-.. code-block:: yaml
+.. code-block:: toml
 
-   fonts:
-     default_size: 24
+   [fonts]
+   default_size = 24
 
-   image:
-     width: 400
-     height: 200
+   [image]
+   width = 400
+   height = 200
 
-   grid:
-     rows: 2
-     columns: 2
-     margin_x: 5
-     margin_y: 5
+   [grid]
+   rows = 2
+   columns = 2
+   margin_x = 5
+   margin_y = 5
 
-     texts:
-       - start: [0, 0]
-         text: "Hello"
-         anchor: "mm"
+   [[grid.texts]]
+   start = [0, 0]
+   text = "Hello"
+   anchor = "mm"
 
-       - start: [0, 1]
-         text: "World"
-         anchor: "mm"
+   [[grid.texts]]
+   start = [0, 1]
+   text = "World"
+   anchor = "mm"
 
 Render from CLI:
 
 .. code-block:: bash
 
-   piltext render config.yaml --output output.png
+   piltext render config.toml --output output.png
 
 Or from Python:
 
@@ -79,7 +80,7 @@ Or from Python:
 
    from piltext import ConfigLoader
 
-   loader = ConfigLoader("config.yaml")
+   loader = ConfigLoader("config.toml")
    image = loader.render(output_path="output.png")
 
 Configuration Options
@@ -87,64 +88,66 @@ Configuration Options
 
 **Fonts Section:**
 
-.. code-block:: yaml
+.. code-block:: toml
 
-   fonts:
-     default_size: 20              # Default font size in pixels
-     default_name: "Roboto-Bold"   # Default font name
+   [fonts]
+   default_size = 20              # Default font size in pixels
+   default_name = "Roboto-Bold"   # Default font name
 
-     # Optional: Custom font directories
-     directories:
-       - /path/to/fonts
+   # Optional: Custom font directories
+   directories = ["/path/to/fonts"]
 
-     # Optional: Download fonts before rendering
-     download:
-       # From Google Fonts
-       - part1: "ofl"
-         part2: "roboto"
-         font_name: "Roboto[wdth,wght].ttf"
+   # Optional: Download fonts before rendering
+   # From Google Fonts
+   [[fonts.download]]
+   part1 = "ofl"
+   part2 = "roboto"
+   font_name = "Roboto[wdth,wght].ttf"
 
-       # From URL
-       - url: "https://example.com/font.ttf"
+   # From URL
+   [[fonts.download]]
+   url = "https://example.com/font.ttf"
 
 **Image Section:**
 
-.. code-block:: yaml
+.. code-block:: toml
 
-   image:
-     width: 480                    # Image width in pixels
-     height: 280                   # Image height in pixels
-     inverted: false               # Invert colors
-     mirror: false                 # Mirror horizontally
-     orientation: 0                # Rotation angle
+   [image]
+   width = 480                    # Image width in pixels
+   height = 280                   # Image height in pixels
+   inverted = false               # Invert colors
+   mirror = false                 # Mirror horizontally
+   orientation = 0                # Rotation angle
 
 **Grid Section:**
 
-.. code-block:: yaml
+.. code-block:: toml
 
-   grid:
-     rows: 4                       # Number of rows
-     columns: 7                    # Number of columns
-     margin_x: 2                   # Horizontal margin in pixels
-     margin_y: 2                   # Vertical margin in pixels
+   [grid]
+   rows = 4                       # Number of rows
+   columns = 7                    # Number of columns
+   margin_x = 2                   # Horizontal margin in pixels
+   margin_y = 2                   # Vertical margin in pixels
 
-     # Merge cells: [[start_row, start_col], [end_row, end_col]]
-     merge:
-       - [[0, 0], [0, 3]]          # Merge row 0, columns 0-3
-       - [[1, 0], [2, 1]]          # Merge rows 1-2, columns 0-1
+   # Merge cells: [[start_row, start_col], [end_row, end_col]]
+   merge = [
+     [[0, 0], [0, 3]],            # Merge row 0, columns 0-3
+     [[1, 0], [2, 1]],            # Merge rows 1-2, columns 0-1
+   ]
 
-     # Text content
-     texts:
-       - start: 0                  # Merged cell index
-         text: "Header"
-         font_variation: "Bold"
-         fill: 255
-         anchor: "mm"              # Anchor: lt/mm/rs etc.
+   # Text content
+   [[grid.texts]]
+   start = 0                      # Merged cell index
+   text = "Header"
+   font_variation = "Bold"
+   fill = 255
+   anchor = "mm"                  # Anchor: lt/mm/rs etc.
 
-       - start: [1, 2]             # Or use [row, col]
-         text: "Cell Text"
-         font_name: "CustomFont"
-         fill: 128
+   [[grid.texts]]
+   start = [1, 2]                 # Or use [row, col]
+   text = "Cell Text"
+   font_name = "CustomFont"
+   fill = 128
 
 **Anchor Options:**
 
@@ -167,57 +170,62 @@ Common anchor values:
 When no ``font_size`` is specified, text automatically scales to fit the cell. The anchor
 determines where the fitted text is positioned:
 
-.. code-block:: yaml
+.. code-block:: toml
 
-    grid:
-      rows: 2
-      columns: 2
-      merge:
-        - [[0, 0], [1, 1]]  # Large merged cell
-      texts:
-        - start: [0, 0]
-          text: "AUTO-FIT"
-          anchor: "mm"      # Text fills cell, centered
-          fill: 255
+    [grid]
+    rows = 2
+    columns = 2
+    merge = [
+      [[0, 0], [1, 1]],  # Large merged cell
+    ]
 
-        - start: [0, 1]
-          text: "12345"
-          anchor: "rb"      # Text fills cell, positioned at bottom-right
-          font_size: 20     # Fixed size (no auto-fit)
+    [[grid.texts]]
+    start = [0, 0]
+    text = "AUTO-FIT"
+    anchor = "mm"        # Text fills cell, centered
+    fill = 255
+
+    [[grid.texts]]
+    start = [0, 1]
+    text = "12345"
+    anchor = "rb"        # Text fills cell, positioned at bottom-right
+    font_size = 20       # Fixed size (no auto-fit)
 
 **Embedding Visualizations:**
 
 You can embed dial and squares visualizations directly in grid cells:
 
-.. code-block:: yaml
+.. code-block:: toml
 
-   grid:
-     rows: 2
-     columns: 3
-     margin_x: 5
-     margin_y: 5
+   [grid]
+   rows = 2
+   columns = 3
+   margin_x = 5
+   margin_y = 5
 
-     texts:
-       # Dial visualization
-       - start: [0, 0]
-         dial:
-           percentage: 0.75
-           arc_start: 135
-           arc_end: 45
-           fill_color: "black"
-           empty_color: "white"
+   # Dial visualization
+   [[grid.texts]]
+   start = [0, 0]
+   [grid.texts.dial]
+   percentage = 0.75
+   arc_start = 135
+   arc_end = 45
+   fill_color = "black"
+   empty_color = "white"
 
-       # Text label
-       - start: [0, 1]
-         text: "75%"
-         anchor: "mm"
+   # Text label
+   [[grid.texts]]
+   start = [0, 1]
+   text = "75%"
+   anchor = "mm"
 
-       # Squares visualization
-       - start: [1, 0]
-         squares:
-           percentage: 0.60
-           fill_color: "black"
-           empty_color: "white"
+   # Squares visualization
+   [[grid.texts]]
+   start = [1, 0]
+   [grid.texts.squares]
+   percentage = 0.60
+   fill_color = "black"
+   empty_color = "white"
 
 The ``dial`` and ``squares`` parameters are the same as the standalone dial/squares sections.
 Visualizations auto-size to fit the cell dimensions.
@@ -226,25 +234,25 @@ Visualizations auto-size to fit the cell dimensions.
 
 Create standalone dial or squares visualizations:
 
-.. code-block:: yaml
+.. code-block:: toml
 
    # Dial visualization
-   dial:
-     percentage: 0.75              # Fill percentage (0.0-1.0)
-     size: 250                     # Diameter in pixels
-     arc_start: 135                # Start angle in degrees
-     arc_end: 45                   # End angle in degrees
-     line_width: 20                # Arc thickness in pixels
-     fill_color: "black"           # Filled portion color
-     empty_color: "white"          # Empty portion color
+   [dial]
+   percentage = 0.75              # Fill percentage (0.0-1.0)
+   size = 250                     # Diameter in pixels
+   arc_start = 135                # Start angle in degrees
+   arc_end = 45                   # End angle in degrees
+   line_width = 20                # Arc thickness in pixels
+   fill_color = "black"           # Filled portion color
+   empty_color = "white"          # Empty portion color
 
    # Squares visualization
-   squares:
-     percentage: 0.60              # Fill percentage (0.0-1.0)
-     squares_x: 10                 # Number of squares horizontally
-     squares_y: 10                 # Number of squares vertically
-     fill_color: "black"           # Filled squares color
-     empty_color: "white"          # Empty squares color
+   [squares]
+   percentage = 0.60              # Fill percentage (0.0-1.0)
+   squares_x = 10                 # Number of squares horizontally
+   squares_y = 10                 # Number of squares vertically
+   fill_color = "black"           # Filled squares color
+   empty_color = "white"          # Empty squares color
 
 CLI Commands
 ------------
@@ -257,22 +265,22 @@ Render from config file:
 .. code-block:: bash
 
    # Save to file
-   piltext render config.yaml -o output.png
+   piltext render config.toml -o output.png
 
    # Display in terminal (requires rich-pixels)
-   piltext render config.yaml -d
+   piltext render config.toml -d
 
    # Display as ASCII art
-   piltext render config.yaml -a
+   piltext render config.toml -a
 
    # Display as simple ASCII art (uses only space, dot, hash)
-   piltext render config.yaml -a -s
+   piltext render config.toml -a -s
 
    # Control display width
-   piltext render config.yaml -a --display-width 100
+   piltext render config.toml -a --display-width 100
 
    # Save and display
-   piltext render config.yaml -o output.png -d
+   piltext render config.toml -o output.png -d
 
 Font Management
 ~~~~~~~~~~~~~~~

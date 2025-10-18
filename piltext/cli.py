@@ -320,7 +320,7 @@ def _handle_analyze(loader: ConfigLoader) -> None:
 
 @app.command("render")
 def render_from_config(
-    config: Annotated[str, typer.Argument(help="Path to YAML configuration file")],
+    config: Annotated[str, typer.Argument(help="Path to TOML configuration file")],
     output: Annotated[
         Optional[str],
         typer.Option("--output", "-o", help="Output image file path (PNG)"),

@@ -16,7 +16,7 @@ visualizations (dials and waffle charts).
 - 🔤 **Font Management** - Load local fonts or download from Google Fonts
 - 📊 **Grid Layouts** - Create multi-cell grids with merged cells
 - 📈 **Visualizations** - Built-in dial gauges and waffle charts for percentages
-- ⚙️ **YAML Configuration** - Define complex layouts with simple config files
+- ⚙️ **TOML Configuration** - Define complex layouts with simple config files
 - 🖼️ **Image Transformations** - Mirror, rotate, and invert images
 
 ## Installation
@@ -52,37 +52,39 @@ image.finalize()
 image.show()
 ```
 
-### Using YAML Configuration
+### Using TOML Configuration
 
-Create `config.yaml`:
+Create `config.toml`:
 
-```yaml
-fonts:
-  default_size: 24
+```toml
+[fonts]
+default_size = 24
 
-image:
-  width: 400
-  height: 200
+[image]
+width = 400
+height = 200
 
-grid:
-  rows: 2
-  columns: 2
-  margin_x: 5
-  margin_y: 5
+[grid]
+rows = 2
+columns = 2
+margin_x = 5
+margin_y = 5
 
-  texts:
-    - start: [0, 0]
-      text: "Hello"
-      anchor: "mm"
-    - start: [0, 1]
-      text: "World"
-      anchor: "mm"
+[[grid.texts]]
+start = [0, 0]
+text = "Hello"
+anchor = "mm"
+
+[[grid.texts]]
+start = [0, 1]
+text = "World"
+anchor = "mm"
 ```
 
 Render from command line:
 
 ```bash
-piltext render config.yaml --output output.png
+piltext render config.toml --output output.png
 ```
 
 Or from Python:
@@ -90,7 +92,7 @@ Or from Python:
 ```python
 from piltext import ConfigLoader
 
-loader = ConfigLoader("config.yaml")
+loader = ConfigLoader("config.toml")
 image = loader.render(output_path="output.png")
 ```
 
@@ -238,158 +240,172 @@ squares = ImageSquares(
 squares.show()
 ```
 
-## YAML Configuration Reference
+## TOML Configuration Reference
 
 ### Complete Example
 
-```yaml
-fonts:
-  default_size: 20
-  default_name: "Roboto-Bold"
-  directories:
-    - /path/to/fonts
-  download:
-    - part1: "ofl"
-      part2: "roboto"
-      font_name: "Roboto[wdth,wght].ttf"
+```toml
+[fonts]
+default_size = 20
+default_name = "Roboto-Bold"
+directories = ["/path/to/fonts"]
 
-image:
-  width: 480
-  height: 280
-  mode: "RGB"
-  background: "white"
-  inverted: false
-  mirror: false
-  orientation: 0
+[[fonts.download]]
+part1 = "ofl"
+part2 = "roboto"
+font_name = "Roboto[wdth,wght].ttf"
 
-grid:
-  rows: 4
-  columns: 3
-  margin_x: 5
-  margin_y: 5
+[image]
+width = 480
+height = 280
+mode = "RGB"
+background = "white"
+inverted = false
+mirror = false
+orientation = 0
 
-  merge:
-    - [[0, 0], [0, 2]] # Header row
-    - [[1, 1], [2, 2]] # Large cell
+[grid]
+rows = 4
+columns = 3
+margin_x = 5
+margin_y = 5
 
-  texts:
-    - start: [0, 0]
-      text: "Header"
-      anchor: "mm"
-      font_size: 28
-      fill: 0
+merge = [
+  [[0, 0], [0, 2]],  # Header row
+  [[1, 1], [2, 2]]   # Large cell
+]
 
-    - start: [1, 0]
-      text: "Data"
-      anchor: "lt"
-      font_variation: "Bold"
+[[grid.texts]]
+start = [0, 0]
+text = "Header"
+anchor = "mm"
+font_size = 28
+fill = 0
 
-    # Embed dial in grid cell
-    - start: [1, 1]
-      dial:
-        percentage: 0.75
-        fg_color: "#4CAF50"
-        show_value: true
-      anchor: "mm"
+[[grid.texts]]
+start = [1, 0]
+text = "Data"
+anchor = "lt"
+font_variation = "Bold"
 
-    # Embed waffle chart in grid cell
-    - start: [3, 2]
-      squares:
-        percentage: 0.60
-        rows: 5
-        columns: 5
-        fg_color: "#2196F3"
-      anchor: "mm"
+# Embed dial in grid cell
+[[grid.texts]]
+start = [1, 1]
+anchor = "mm"
+
+[grid.texts.dial]
+percentage = 0.75
+fg_color = "#4CAF50"
+show_value = true
+
+# Embed waffle chart in grid cell
+[[grid.texts]]
+start = [3, 2]
+anchor = "mm"
+
+[grid.texts.squares]
+percentage = 0.60
+rows = 5
+columns = 5
+fg_color = "#2196F3"
 ```
 
 ### Configuration Sections
 
 #### Fonts
 
-```yaml
-fonts:
-  default_size: 20 # Default font size in pixels
-  default_name: "Roboto-Bold" # Default font name
-  directories: # Custom font directories (optional)
-    - /path/to/fonts
-  download: # Download fonts before rendering (optional)
-    - part1: "ofl" # Google Fonts: license type
-      part2: "roboto" # Google Fonts: font family
-      font_name: "Roboto[wdth,wght].ttf"
-    - url: "https://example.com/font.ttf" # Or direct URL
+```toml
+[fonts]
+default_size = 20              # Default font size in pixels
+default_name = "Roboto-Bold"   # Default font name
+directories = ["/path/to/fonts"]  # Custom font directories (optional)
+
+# Download fonts before rendering (optional)
+# From Google Fonts
+[[fonts.download]]
+part1 = "ofl"                  # Google Fonts: license type
+part2 = "roboto"               # Google Fonts: font family
+font_name = "Roboto[wdth,wght].ttf"
+
+# Or from direct URL
+[[fonts.download]]
+url = "https://example.com/font.ttf"
 ```
 
 #### Image
 
-```yaml
-image:
-  width: 480 # Image width in pixels
-  height: 280 # Image height in pixels
-  mode: "RGB" # PIL mode: RGB, RGBA, L, 1
-  background: "white" # Background color
-  inverted: false # Invert colors
-  mirror: false # Mirror horizontally
-  orientation: 0 # Rotation angle (0, 90, 180, 270)
+```toml
+[image]
+width = 480                    # Image width in pixels
+height = 280                   # Image height in pixels
+mode = "RGB"                   # PIL mode: RGB, RGBA, L, 1
+background = "white"           # Background color
+inverted = false               # Invert colors
+mirror = false                 # Mirror horizontally
+orientation = 0                # Rotation angle (0, 90, 180, 270)
 ```
 
 #### Grid
 
-```yaml
-grid:
-  rows: 4 # Number of rows
-  columns: 3 # Number of columns
-  margin_x: 5 # Horizontal margin in pixels
-  margin_y: 5 # Vertical margin in pixels
+```toml
+[grid]
+rows = 4                       # Number of rows
+columns = 3                    # Number of columns
+margin_x = 5                   # Horizontal margin in pixels
+margin_y = 5                   # Vertical margin in pixels
 
-  merge: # Merge cells (optional)
-    - [[start_row, start_col], [end_row, end_col]]
+# Merge cells (optional)
+merge = [
+  [[0, 0], [2, 0]],            # Merge rows 0-2, column 0
+]
 
-  texts: # Text content
-    - start: [row, col] # Cell position (or merged cell index)
-      text: "Content" # Text to display
-      font_name: "Roboto" # Font name (optional)
-      font_size: 24 # Font size (optional, triggers auto-fit if omitted)
-      font_variation: "Bold" # Font variation (optional)
-      fill: 0 # Text color (optional, default: 0 for black)
-      anchor: "mm" # Anchor position (optional, default: "lt")
+# Text content
+[[grid.texts]]
+start = [0, 0]                 # Cell position (or merged cell index)
+text = "Content"               # Text to display
+font_name = "Roboto"           # Font name (optional)
+font_size = 24                 # Font size (optional, triggers auto-fit if omitted)
+font_variation = "Bold"        # Font variation (optional)
+fill = 0                       # Text color (optional, default: 0 for black)
+anchor = "mm"                  # Anchor position (optional, default: "lt")
 ```
 
 #### Standalone Dial
 
-```yaml
-dial:
-  percentage: 0.75 # Value from 0.0 to 1.0
-  size: 300 # Image size in pixels
-  radius: 120 # Dial radius (optional, auto-calculated)
-  fg_color: "#4CAF50" # Arc color for filled portion
-  track_color: "#e0e0e0" # Background arc color
-  bg_color: "white" # Background color
-  thickness: 20 # Arc thickness in pixels
-  font_name: "Roboto-Bold" # Font for labels (optional)
-  font_size: 24 # Font size (optional)
-  show_needle: true # Show needle pointer
-  show_ticks: true # Show tick marks
-  show_value: true # Show percentage in center
-  start_angle: -135 # Start angle in degrees
-  end_angle: 135 # End angle in degrees
+```toml
+[dial]
+percentage = 0.75              # Value from 0.0 to 1.0
+size = 300                     # Image size in pixels
+radius = 120                   # Dial radius (optional, auto-calculated)
+fg_color = "#4CAF50"           # Arc color for filled portion
+track_color = "#e0e0e0"        # Background arc color
+bg_color = "white"             # Background color
+thickness = 20                 # Arc thickness in pixels
+font_name = "Roboto-Bold"      # Font for labels (optional)
+font_size = 24                 # Font size (optional)
+show_needle = true             # Show needle pointer
+show_ticks = true              # Show tick marks
+show_value = true              # Show percentage in center
+start_angle = -135             # Start angle in degrees
+end_angle = 135                # End angle in degrees
 ```
 
 #### Standalone Waffle Chart
 
-```yaml
-squares:
-  percentage: 0.65 # Value from 0.0 to 1.0
-  max_squares: 100 # Total number of squares
-  size: 300 # Image size in pixels
-  rows: 10 # Number of rows (optional)
-  columns: 10 # Number of columns (optional)
-  fg_color: "#4CAF50" # Fill color
-  empty_color: "#e0e0e0" # Empty square color
-  bg_color: "white" # Background color
-  gap: 2 # Gap between squares in pixels
-  border_width: 1 # Border width
-  border_color: "#cccccc" # Border color
-  show_partial: true # Partially fill last square
+```toml
+[squares]
+percentage = 0.65              # Value from 0.0 to 1.0
+max_squares = 100              # Total number of squares
+size = 300                     # Image size in pixels
+rows = 10                      # Number of rows (optional)
+columns = 10                   # Number of columns (optional)
+fg_color = "#4CAF50"           # Fill color
+empty_color = "#e0e0e0"        # Empty square color
+bg_color = "white"             # Background color
+gap = 2                        # Gap between squares in pixels
+border_width = 1               # Border width
+border_color = "#cccccc"       # Border color
+show_partial = true            # Partially fill last square
 ```
 
 **Priority:** `dial` > `squares` > `grid` > `image`
@@ -399,11 +415,11 @@ squares:
 ### Render Images
 
 ```bash
-# Render from YAML config
-piltext render config.yaml -o output.png
+# Render from TOML config
+piltext render config.toml -o output.png
 
 # Render with specific output
-piltext render examples/example_dial.yaml --output my_dial.png
+piltext render examples/example_dial.toml --output my_dial.png
 ```
 
 ### Font Management
@@ -423,11 +439,11 @@ piltext font variations "Roboto[wdth,wght]"
 
 See the `examples/` directory for complete examples:
 
-- `example_simple.yaml` - Basic text grid
-- `example_grid_with_visualizations.yaml` - Grid with embedded charts
-- `example_dial.yaml` - Standalone dial gauge
-- `example_squares.yaml` - Standalone waffle chart
-- `example_config.yaml` - Complete configuration example
+- `example_simple.toml` - Basic text grid
+- `example_grid_with_visualizations.toml` - Grid with embedded charts
+- `example_dial.toml` - Standalone dial gauge
+- `example_squares.toml` - Standalone waffle chart
+- `example_config.toml` - Complete configuration example
 
 ## Development
 

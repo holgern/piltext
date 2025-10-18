@@ -1,8 +1,12 @@
 import os
+import sys
 import tempfile
 import unittest
 
-import yaml
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 from piltext import ConfigExporter, FontManager, ImageDrawer, TextGrid
 
@@ -10,7 +14,7 @@ from piltext import ConfigExporter, FontManager, ImageDrawer, TextGrid
 class TestConfigExporter(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
-        self.temp_file = os.path.join(self.temp_dir, "test_config.yaml")
+        self.temp_file = os.path.join(self.temp_dir, "test_config.toml")
 
     def tearDown(self):
         if os.path.exists(self.temp_file):
@@ -158,8 +162,8 @@ class TestConfigExporter(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.temp_file))
 
-        with open(self.temp_file) as f:
-            loaded_config = yaml.safe_load(f)
+        with open(self.temp_file, "rb") as f:
+            loaded_config = tomllib.load(f)
 
         self.assertIn("image", loaded_config)
         self.assertIn("grid", loaded_config)
@@ -176,8 +180,8 @@ class TestConfigExporter(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.temp_file))
 
-        with open(self.temp_file) as f:
-            loaded_config = yaml.safe_load(f)
+        with open(self.temp_file, "rb") as f:
+            loaded_config = tomllib.load(f)
 
         self.assertIn("fonts", loaded_config)
         self.assertIn("image", loaded_config)
@@ -203,8 +207,8 @@ class TestConfigExporter(unittest.TestCase):
 
         self.assertTrue(os.path.exists(self.temp_file))
 
-        with open(self.temp_file) as f:
-            loaded_config = yaml.safe_load(f)
+        with open(self.temp_file, "rb") as f:
+            loaded_config = tomllib.load(f)
 
         # Verify texts are exported
         self.assertIn("grid", loaded_config)
@@ -243,8 +247,8 @@ class TestConfigExporter(unittest.TestCase):
         exporter = ConfigExporter()
         exporter.export_grid(grid, self.temp_file)
 
-        with open(self.temp_file) as f:
-            loaded_config = yaml.safe_load(f)
+        with open(self.temp_file, "rb") as f:
+            loaded_config = tomllib.load(f)
 
         # Only text items should be exported
         texts = loaded_config["grid"]["texts"]
@@ -263,8 +267,8 @@ class TestConfigExporter(unittest.TestCase):
         exporter = ConfigExporter()
         exporter.export_grid(grid, self.temp_file)
 
-        with open(self.temp_file) as f:
-            loaded_config = yaml.safe_load(f)
+        with open(self.temp_file, "rb") as f:
+            loaded_config = tomllib.load(f)
 
         # Texts should be empty or not present
         self.assertNotIn("texts", loaded_config["grid"])

@@ -1,0 +1,839 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/holgern/piltext/schemas/piltext.json",
+  "title": "Piltext Configuration",
+  "description": "Schema for piltext TOML configuration files that generate PNG images from text",
+  "type": "object",
+  "properties": {
+    "fonts": {
+      "type": "object",
+      "description": "Font configuration and management",
+      "x-taplo": {
+        "docs": {
+          "main": "Font configuration including default settings, directories, and font downloads"
+        }
+      },
+      "properties": {
+        "default_size": {
+          "type": "integer",
+          "description": "Default font size in pixels",
+          "default": 15,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Default font size in pixels used when no specific font size is provided"
+            }
+          }
+        },
+        "default_name": {
+          "type": "string",
+          "description": "Default font name or path",
+          "x-taplo": {
+            "docs": {
+              "main": "Default font name (e.g., 'Roboto[wdth,wght]') or path to font file. Supports variable fonts with axis notation."
+            }
+          }
+        },
+        "directories": {
+          "type": "array",
+          "description": "Custom font directories to search",
+          "items": {
+            "type": "string",
+            "description": "Path to font directory"
+          },
+          "x-taplo": {
+            "docs": {
+              "main": "Additional directories to search for fonts. System font directories are searched by default."
+            }
+          }
+        },
+        "download": {
+          "type": "array",
+          "description": "Fonts to download before rendering",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "description": "Download font from Google Fonts",
+                "required": ["part1", "part2", "font_name"],
+                "properties": {
+                  "part1": {
+                    "type": "string",
+                    "description": "Google Fonts category (e.g., 'ofl', 'apache', 'ufl')",
+                    "enum": ["ofl", "apache", "ufl"],
+                    "x-taplo": {
+                      "docs": {
+                        "enumValues": [
+                          "Open Font License fonts",
+                          "Apache licensed fonts",
+                          "Ubuntu Font License fonts"
+                        ]
+                      }
+                    }
+                  },
+                  "part2": {
+                    "type": "string",
+                    "description": "Font family name in lowercase (e.g., 'roboto')"
+                  },
+                  "font_name": {
+                    "type": "string",
+                    "description": "Exact font filename (e.g., 'Roboto[wdth,wght].ttf')"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "description": "Download font from direct URL",
+                "required": ["url"],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Direct URL to font file"
+                  }
+                }
+              }
+            ]
+          },
+          "x-taplo": {
+            "docs": {
+              "main": "List of fonts to download before rendering. Supports Google Fonts repository or direct URLs."
+            }
+          }
+        }
+      },
+      "x-taplo": {
+        "initKeys": ["default_size", "default_name"]
+      }
+    },
+    "image": {
+      "type": "object",
+      "description": "Image dimensions and transformations",
+      "x-taplo": {
+        "docs": {
+          "main": "Image configuration including dimensions, color mode, background, and transformations"
+        }
+      },
+      "properties": {
+        "width": {
+          "type": "integer",
+          "description": "Image width in pixels",
+          "default": 480,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Width of the output image in pixels"
+            }
+          }
+        },
+        "height": {
+          "type": "integer",
+          "description": "Image height in pixels",
+          "default": 280,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Height of the output image in pixels"
+            }
+          }
+        },
+        "mode": {
+          "type": "string",
+          "description": "PIL image mode",
+          "default": "RGB",
+          "enum": ["RGB", "RGBA", "L", "1"],
+          "x-taplo": {
+            "docs": {
+              "main": "PIL image mode for the output image",
+              "enumValues": [
+                "RGB - Full color (8-bit per channel)",
+                "RGBA - Full color with alpha transparency",
+                "L - Grayscale (8-bit)",
+                "1 - Black and white (1-bit)"
+              ]
+            }
+          }
+        },
+        "background": {
+          "description": "Background color",
+          "default": "white",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Color name or hex code (e.g., 'white', '#f5f5f5')"
+            },
+            {
+              "type": "integer",
+              "description": "Grayscale value (0-255)"
+            }
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Background color as name (e.g., 'white'), hex code (e.g., '#f5f5f5'), or grayscale value (0-255)"
+            }
+          }
+        },
+        "inverted": {
+          "type": "boolean",
+          "description": "Invert image colors",
+          "default": false,
+          "x-taplo": {
+            "docs": {
+              "main": "If true, inverts all colors in the final image"
+            }
+          }
+        },
+        "mirror": {
+          "type": "boolean",
+          "description": "Mirror image horizontally",
+          "default": false,
+          "x-taplo": {
+            "docs": {
+              "main": "If true, flips the image horizontally (left-right)"
+            }
+          }
+        },
+        "orientation": {
+          "type": "integer",
+          "description": "Rotation angle in degrees",
+          "default": 0,
+          "enum": [0, 90, 180, 270],
+          "x-taplo": {
+            "docs": {
+              "main": "Rotate the image by the specified angle (clockwise)",
+              "enumValues": [
+                "No rotation",
+                "Rotate 90° clockwise",
+                "Rotate 180° (upside down)",
+                "Rotate 270° clockwise (90° counter-clockwise)"
+              ]
+            }
+          }
+        }
+      },
+      "x-taplo": {
+        "initKeys": ["width", "height"]
+      }
+    },
+    "grid": {
+      "type": "object",
+      "description": "Text grid layout configuration",
+      "x-taplo": {
+        "docs": {
+          "main": "Grid-based text layout with support for cell merging and multiple text elements"
+        }
+      },
+      "properties": {
+        "rows": {
+          "type": "integer",
+          "description": "Number of rows in the grid",
+          "default": 1,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Number of rows in the grid layout"
+            }
+          }
+        },
+        "columns": {
+          "type": "integer",
+          "description": "Number of columns in the grid",
+          "default": 1,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Number of columns in the grid layout"
+            }
+          }
+        },
+        "margin_x": {
+          "type": "integer",
+          "description": "Horizontal margin between cells in pixels",
+          "default": 0,
+          "minimum": 0,
+          "x-taplo": {
+            "docs": {
+              "main": "Horizontal spacing between grid cells in pixels"
+            }
+          }
+        },
+        "margin_y": {
+          "type": "integer",
+          "description": "Vertical margin between cells in pixels",
+          "default": 0,
+          "minimum": 0,
+          "x-taplo": {
+            "docs": {
+              "main": "Vertical spacing between grid cells in pixels"
+            }
+          }
+        },
+        "merge": {
+          "type": "array",
+          "description": "Cell merge definitions",
+          "items": {
+            "type": "array",
+            "description": "Merge range: [[start_row, start_col], [end_row, end_col]]",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "array",
+              "description": "Cell coordinates [row, column]",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "x-taplo": {
+            "docs": {
+              "main": "List of cell merges. Each merge is defined as [[start_row, start_col], [end_row, end_col]] where coordinates are 0-based."
+            }
+          }
+        },
+        "texts": {
+          "type": "array",
+          "description": "Text elements to render in grid cells",
+          "items": {
+            "type": "object",
+            "description": "Text element configuration",
+            "required": ["start"],
+            "properties": {
+              "start": {
+                "description": "Starting cell position",
+                "oneOf": [
+                  {
+                    "type": "integer",
+                    "description": "Merged cell index (0-based)"
+                  },
+                  {
+                    "type": "array",
+                    "description": "Cell coordinates [row, column]",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                ],
+                "x-taplo": {
+                  "docs": {
+                    "main": "Cell position as integer index (for merged cells) or [row, col] coordinates"
+                  }
+                }
+              },
+              "end": {
+                "type": "array",
+                "description": "Ending cell coordinates [row, column] for spanning multiple cells",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "x-taplo": {
+                  "docs": {
+                    "main": "Optional ending cell [row, col] to span across multiple cells"
+                  }
+                }
+              },
+              "text": {
+                "type": "string",
+                "description": "Text content to render",
+                "x-taplo": {
+                  "docs": {
+                    "main": "Text content. Use \\n for line breaks."
+                  }
+                }
+              },
+              "anchor": {
+                "type": "string",
+                "description": "Text anchor position",
+                "default": "mm",
+                "enum": [
+                  "lt",
+                  "mt",
+                  "rt",
+                  "lm",
+                  "mm",
+                  "rm",
+                  "lb",
+                  "mb",
+                  "rb",
+                  "la",
+                  "ma",
+                  "ra",
+                  "ls",
+                  "ms",
+                  "rs"
+                ],
+                "x-taplo": {
+                  "docs": {
+                    "main": "Text anchor position in the cell",
+                    "enumValues": [
+                      "Left-Top",
+                      "Middle-Top",
+                      "Right-Top",
+                      "Left-Middle",
+                      "Middle-Middle (center)",
+                      "Right-Middle",
+                      "Left-Bottom",
+                      "Middle-Bottom",
+                      "Right-Bottom",
+                      "Left-Ascender",
+                      "Middle-Ascender",
+                      "Right-Ascender",
+                      "Left-Baseline",
+                      "Middle-Baseline",
+                      "Right-Baseline"
+                    ]
+                  }
+                }
+              },
+              "fill": {
+                "description": "Text color",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "description": "Color name or hex code"
+                  },
+                  {
+                    "type": "integer",
+                    "description": "Grayscale value (0-255)",
+                    "minimum": 0,
+                    "maximum": 255
+                  }
+                ],
+                "x-taplo": {
+                  "docs": {
+                    "main": "Text color as name, hex code, or grayscale value"
+                  }
+                }
+              },
+              "font_size": {
+                "type": "integer",
+                "description": "Font size in pixels",
+                "minimum": 1,
+                "x-taplo": {
+                  "docs": {
+                    "main": "Font size in pixels. Overrides default_size if specified."
+                  }
+                }
+              },
+              "font_name": {
+                "type": "string",
+                "description": "Font name or path",
+                "x-taplo": {
+                  "docs": {
+                    "main": "Font name or path. Overrides default_name if specified."
+                  }
+                }
+              },
+              "font_variation": {
+                "type": "string",
+                "description": "Font variation name",
+                "x-taplo": {
+                  "docs": {
+                    "main": "Variable font variation name (e.g., 'Bold', 'Light', 'Thin')"
+                  }
+                }
+              },
+              "dial": {
+                "type": "object",
+                "description": "Dial visualization to embed in this cell",
+                "allOf": [{"$ref": "#/definitions/dialConfig"}],
+                "x-taplo": {
+                  "docs": {
+                    "main": "Embed a circular gauge/dial visualization in this grid cell"
+                  }
+                }
+              },
+              "squares": {
+                "type": "object",
+                "description": "Squares visualization to embed in this cell",
+                "allOf": [{"$ref": "#/definitions/squaresConfig"}],
+                "x-taplo": {
+                  "docs": {
+                    "main": "Embed a waffle chart/squares visualization in this grid cell"
+                  }
+                }
+              }
+            }
+          },
+          "x-taplo": {
+            "docs": {
+              "main": "List of text elements to render in grid cells. Each element can be text, a dial, or a squares visualization."
+            }
+          }
+        }
+      },
+      "x-taplo": {
+        "initKeys": ["rows", "columns", "texts"]
+      }
+    },
+    "dial": {
+      "type": "object",
+      "description": "Circular gauge/dial visualization",
+      "allOf": [{"$ref": "#/definitions/dialConfig"}],
+      "x-taplo": {
+        "docs": {
+          "main": "Create a circular gauge/dial image for percentage visualization"
+        }
+      }
+    },
+    "squares": {
+      "type": "object",
+      "description": "Waffle chart squares visualization",
+      "allOf": [{"$ref": "#/definitions/squaresConfig"}],
+      "x-taplo": {
+        "docs": {
+          "main": "Create a waffle chart image with squares for percentage visualization"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "dialConfig": {
+      "type": "object",
+      "description": "Dial configuration options",
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "description": "Percentage value to display (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "x-taplo": {
+            "docs": {
+              "main": "Percentage value from 0.0 (0%) to 1.0 (100%)"
+            }
+          }
+        },
+        "size": {
+          "type": "integer",
+          "description": "Image size in pixels (width and height)",
+          "default": 200,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Size of the dial image in pixels (creates a square image)"
+            }
+          }
+        },
+        "radius": {
+          "type": "integer",
+          "description": "Arc radius in pixels",
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Radius of the dial arc in pixels. If not specified, calculated from size and thickness."
+            }
+          }
+        },
+        "bg_color": {
+          "description": "Background color",
+          "default": "white",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Background color as name, hex code, or grayscale value"
+            }
+          }
+        },
+        "fg_color": {
+          "description": "Foreground color for filled arc",
+          "default": "#4CAF50",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Color of the filled portion of the dial arc"
+            }
+          }
+        },
+        "track_color": {
+          "description": "Track color for unfilled arc",
+          "default": "#e0e0e0",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Color of the unfilled portion of the dial arc"
+            }
+          }
+        },
+        "thickness": {
+          "type": "integer",
+          "description": "Arc thickness in pixels",
+          "default": 20,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Thickness of the dial arc in pixels"
+            }
+          }
+        },
+        "font_name": {
+          "type": "string",
+          "description": "Font for the percentage text",
+          "x-taplo": {
+            "docs": {
+              "main": "Font name or path for the center percentage text"
+            }
+          }
+        },
+        "font_size": {
+          "type": "integer",
+          "description": "Font size for percentage text",
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Font size in pixels for the center percentage text"
+            }
+          }
+        },
+        "font_variation": {
+          "type": "string",
+          "description": "Font variation for percentage text",
+          "x-taplo": {
+            "docs": {
+              "main": "Variable font variation for the center text (e.g., 'Bold')"
+            }
+          }
+        },
+        "show_needle": {
+          "type": "boolean",
+          "description": "Show pointer needle",
+          "default": true,
+          "x-taplo": {
+            "docs": {
+              "main": "If true, displays a needle pointer at the current percentage"
+            }
+          }
+        },
+        "show_ticks": {
+          "type": "boolean",
+          "description": "Show tick marks",
+          "default": true,
+          "x-taplo": {
+            "docs": {
+              "main": "If true, displays tick marks along the arc"
+            }
+          }
+        },
+        "show_value": {
+          "type": "boolean",
+          "description": "Show percentage value in center",
+          "default": true,
+          "x-taplo": {
+            "docs": {
+              "main": "If true, displays the percentage value in the center of the dial"
+            }
+          }
+        },
+        "start_angle": {
+          "type": "integer",
+          "description": "Starting angle in degrees",
+          "default": -135,
+          "minimum": -360,
+          "maximum": 360,
+          "x-taplo": {
+            "docs": {
+              "main": "Starting angle of the arc in degrees. -135 creates a typical gauge. -180 starts at left for half-circle."
+            }
+          }
+        },
+        "end_angle": {
+          "type": "integer",
+          "description": "Ending angle in degrees",
+          "default": 135,
+          "minimum": -360,
+          "maximum": 360,
+          "x-taplo": {
+            "docs": {
+              "main": "Ending angle of the arc in degrees. 135 creates a typical gauge. 0 ends at right for half-circle."
+            }
+          }
+        }
+      },
+      "x-taplo": {
+        "initKeys": ["percentage"]
+      }
+    },
+    "squaresConfig": {
+      "type": "object",
+      "description": "Squares/waffle chart configuration",
+      "properties": {
+        "percentage": {
+          "type": "number",
+          "description": "Percentage value to display (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.0,
+          "x-taplo": {
+            "docs": {
+              "main": "Percentage value from 0.0 (0%) to 1.0 (100%)"
+            }
+          }
+        },
+        "max_squares": {
+          "type": "integer",
+          "description": "Maximum number of squares (100 for easy percentage reading)",
+          "default": 100,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Total number of squares in the waffle chart. Use 100 for easy percentage interpretation."
+            }
+          }
+        },
+        "size": {
+          "type": "integer",
+          "description": "Image size in pixels (width and height)",
+          "default": 200,
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Size of the squares visualization in pixels (creates a square image)"
+            }
+          }
+        },
+        "rows": {
+          "type": "integer",
+          "description": "Number of rows in the grid",
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Number of rows. If not specified, calculated to create a square grid."
+            }
+          }
+        },
+        "columns": {
+          "type": "integer",
+          "description": "Number of columns in the grid",
+          "minimum": 1,
+          "x-taplo": {
+            "docs": {
+              "main": "Number of columns. If not specified, calculated to create a square grid."
+            }
+          }
+        },
+        "bg_color": {
+          "description": "Background color",
+          "default": "white",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Background color as name, hex code, or grayscale value"
+            }
+          }
+        },
+        "fg_color": {
+          "description": "Foreground color for filled squares",
+          "default": "#4CAF50",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Color of the filled squares"
+            }
+          }
+        },
+        "empty_color": {
+          "description": "Color for empty squares",
+          "default": "#e0e0e0",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Color of the empty (unfilled) squares"
+            }
+          }
+        },
+        "gap": {
+          "type": "integer",
+          "description": "Gap between squares in pixels",
+          "default": 2,
+          "minimum": 0,
+          "x-taplo": {
+            "docs": {
+              "main": "Spacing between squares in pixels"
+            }
+          }
+        },
+        "border_width": {
+          "type": "integer",
+          "description": "Border width for each square in pixels",
+          "default": 1,
+          "minimum": 0,
+          "x-taplo": {
+            "docs": {
+              "main": "Width of the border around each square in pixels. Use 0 for no border."
+            }
+          }
+        },
+        "border_color": {
+          "description": "Border color for squares",
+          "default": "#cccccc",
+          "oneOf": [
+            {"type": "string"},
+            {"type": "integer", "minimum": 0, "maximum": 255}
+          ],
+          "x-taplo": {
+            "docs": {
+              "main": "Color of the square borders"
+            }
+          }
+        },
+        "show_partial": {
+          "type": "boolean",
+          "description": "Show partial filling for precise percentage",
+          "default": true,
+          "x-taplo": {
+            "docs": {
+              "main": "If true, the last square can be partially filled for more precise percentage representation"
+            }
+          }
+        }
+      },
+      "x-taplo": {
+        "initKeys": ["percentage"]
+      }
+    }
+  },
+  "anyOf": [
+    {
+      "required": ["dial"],
+      "description": "Includes dial visualization"
+    },
+    {
+      "required": ["squares"],
+      "description": "Includes squares visualization"
+    },
+    {
+      "required": ["grid"],
+      "description": "Includes grid layout"
+    },
+    {
+      "required": ["image"],
+      "description": "Includes basic image configuration"
+    }
+  ]
+}
