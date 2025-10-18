@@ -4,6 +4,9 @@ if TYPE_CHECKING:
     from rich.console import Console
     from rich_pixels import Pixels
 
+import json
+import sys
+
 import typer
 
 from .ascii_art import display_as_ascii, display_readable_text
@@ -266,6 +269,112 @@ def _prepare_grid_with_borders(loader: ConfigLoader, borders: bool) -> Any:
     return grid
 
 
+def _apply_json_overrides(loader: ConfigLoader, json_data: dict[str, Any]) -> None:
+    for key, value in json_data.items():
+        if isinstance(value, dict):
+            if key not in loader.config:
+                loader.config[key] = {}
+            if isinstance(loader.config[key], dict):
+                loader.config[key].update(value)
+            else:
+                loader.config[key] = value
+        else:
+            loader.config[key] = value
+
+
+def _apply_json_data_to_grid(loader: ConfigLoader, json_data: dict[str, Any]) -> None:
+    if "grid" not in loader.config:
+        return
+
+    grid_config = loader.config["grid"]
+    texts = grid_config.get("texts", [])
+
+    for text_item in texts:
+        if "data_key" in text_item:
+            data_key = text_item["data_key"]
+            if data_key in json_data:
+                value = json_data[data_key]
+                if "text" in text_item or not any(
+                    k in text_item for k in ["dial", "squares"]
+                ):
+                    text_item["text"] = str(value)
+                if "dial" in text_item:
+                    text_item["dial"]["percentage"] = float(value)
+                elif "squares" in text_item:
+                    text_item["squares"]["percentage"] = float(value)
+
+        for attr in ["fill", "font_size", "font_name"]:
+            attr_key = f"{attr}_key"
+            if attr_key in text_item and text_item[attr_key] in json_data:
+                text_item[attr] = json_data[text_item[attr_key]]
+
+
+def _apply_json_array_to_texts(loader: ConfigLoader, json_array: list[Any]) -> None:
+    if "grid" not in loader.config:
+        return
+
+    grid_config = loader.config["grid"]
+    texts = grid_config.get("texts", [])
+
+    for i, text_item in enumerate(texts):
+        if i < len(json_array):
+            value = json_array[i]
+            if "dial" in text_item:
+                text_item["dial"]["percentage"] = float(value)
+            elif "squares" in text_item:
+                text_item["squares"]["percentage"] = float(value)
+            else:
+                text_item["text"] = str(value)
+
+
+def _read_json_input(loader: ConfigLoader) -> None:
+    full_input = sys.stdin.read().strip()
+    if not full_input:
+        return
+
+    buffer = ""
+    for line in full_input.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+
+        buffer += line
+
+        try:
+            json_data = json.loads(buffer)
+            if isinstance(json_data, list):
+                _apply_json_array_to_texts(loader, json_data)
+            elif isinstance(json_data, dict):
+                _apply_json_data_to_grid(loader, json_data)
+                _apply_json_overrides(loader, json_data)
+            else:
+                json_type = type(json_data).__name__
+                typer.echo(
+                    f"Warning: JSON must be object or array, got {json_type}",
+                    err=True,
+                )
+            buffer = ""
+        except json.JSONDecodeError:
+            continue
+
+    if buffer:
+        try:
+            json_data = json.loads(buffer)
+            if isinstance(json_data, list):
+                _apply_json_array_to_texts(loader, json_data)
+            elif isinstance(json_data, dict):
+                _apply_json_data_to_grid(loader, json_data)
+                _apply_json_overrides(loader, json_data)
+            else:
+                json_type = type(json_data).__name__
+                typer.echo(
+                    f"Warning: JSON must be object or array, got {json_type}",
+                    err=True,
+                )
+        except json.JSONDecodeError as e:
+            typer.echo(f"Error parsing JSON: {e}", err=True)
+
+
 def _handle_analyze(loader: ConfigLoader) -> None:
     grid_config = loader.config.get("grid", {})
     if not grid_config:
@@ -387,9 +496,20 @@ def render_from_config(
             help="Display detailed grid analysis (merges, cells, text items)",
         ),
     ] = False,
+    json_input: Annotated[
+        bool,
+        typer.Option(
+            "--json-input",
+            "-j",
+            help="Read JSON lines from stdin to override configuration",
+        ),
+    ] = False,
 ) -> None:
     try:
         loader = ConfigLoader(config)
+
+        if json_input:
+            _read_json_input(loader)
 
         if width is not None or height is not None:
             if "image" not in loader.config:

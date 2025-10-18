@@ -15,6 +15,7 @@ PILText is designed to make it easy to create text-based images programmatically
    :caption: Contents:
 
    quickstart
+   json_input
    apidocs
 
 
